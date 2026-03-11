@@ -9,7 +9,7 @@ class Database:
         self.criar_usuario_padrao()
     
     def criar_tabelas(self):
-        
+        # Tabela de usuários
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +19,7 @@ class Database:
             )
         ''')
         
-        
+        # Tabela de produtos
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS produtos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,7 +40,24 @@ class Database:
             )
         ''')
         
+        # Tabela de vendas
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vendas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_produto TEXT NOT NULL,
+                cliente_codigo TEXT,
+                quantidade INTEGER NOT NULL,
+                preco_unitario REAL NOT NULL,
+                total REAL NOT NULL,
+                data_venda TEXT NOT NULL,
+                hora_venda TEXT NOT NULL,
+                pontos_ganhos INTEGER DEFAULT 0,
+                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo),
+                FOREIGN KEY (cliente_codigo) REFERENCES clientes (codigo)
+            )
+        ''')
         
+        # Tabela de clientes
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS clientes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,18 +80,36 @@ class Database:
                 data_cadastro TEXT NOT NULL,
                 observacoes TEXT,
                 pontos INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'ativo'  -- 'ativo', 'inativo', 'bloqueado'
+                status TEXT DEFAULT 'ativo'
             )
         ''')
         
+        # Tabela de movimentações
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS movimentacoes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_produto TEXT NOT NULL,
+                tipo TEXT NOT NULL,
+                quantidade INTEGER NOT NULL,
+                quantidade_anterior INTEGER NOT NULL,
+                quantidade_nova INTEGER NOT NULL,
+                motivo TEXT,
+                numero_nota TEXT,
+                data_movimento TEXT NOT NULL,
+                hora_movimento TEXT NOT NULL,
+                usuario TEXT,
+                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo)
+            )
+        ''')
         
+        # Tabela de pontos fidelidade
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS pontos_fidelidade (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 cliente_codigo TEXT NOT NULL,
                 data_movimento TEXT NOT NULL,
                 hora_movimento TEXT NOT NULL,
-                tipo TEXT NOT NULL,  -- 'ganho', 'resgate', 'ajuste'
+                tipo TEXT NOT NULL,
                 quantidade INTEGER NOT NULL,
                 saldo_anterior INTEGER NOT NULL,
                 saldo_novo INTEGER NOT NULL,
@@ -84,26 +119,7 @@ class Database:
             )
         ''')
         
-        
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS vendas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                codigo_venda TEXT UNIQUE NOT NULL,
-                codigo_produto TEXT NOT NULL,
-                cliente_codigo TEXT,
-                quantidade INTEGER NOT NULL,
-                preco_unitario REAL NOT NULL,
-                total REAL NOT NULL,
-                data_venda TEXT NOT NULL,
-                hora_venda TEXT NOT NULL,
-                numero_nota TEXT,
-                pontos_ganhos INTEGER DEFAULT 0,
-                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo),
-                FOREIGN KEY (cliente_codigo) REFERENCES clientes (codigo)
-            )
-        ''')
-        
-        # NOVA TABELA: Blacklist
+        # Tabela de blacklist
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS blacklist (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,9 +149,20 @@ class Database:
         ''', (usuario, senha))
         return self.cursor.fetchone()
     
+    def gerar_codigo_cliente(self):
+        self.cursor.execute("SELECT COUNT(*) FROM clientes")
+        count = self.cursor.fetchone()[0] + 1
+        return f"CLI{count:04d}"
+    
+    def gerar_codigo_venda(self):
+        from datetime import datetime
+        self.cursor.execute("SELECT COUNT(*) FROM vendas")
+        count = self.cursor.fetchone()[0] + 1
+        data = datetime.now().strftime("%Y%m%d")
+        return f"VENDA{data}{count:04d}"
+    
     def registrar_movimentacao(self, codigo_produto, tipo, quantidade, quantidade_anterior, 
                                quantidade_nova, motivo="", numero_nota="", usuario=""):
-        """Registra movimentação de estoque"""
         data = datetime.now().strftime("%d/%m/%Y")
         hora = datetime.now().strftime("%H:%M:%S")
         
@@ -147,19 +174,6 @@ class Database:
         ''', (codigo_produto, tipo, quantidade, quantidade_anterior, quantidade_nova,
               motivo, numero_nota, data, hora, usuario))
         self.conn.commit()
-    
-    def gerar_codigo_cliente(self):
-        """Gera código automático para cliente"""
-        self.cursor.execute("SELECT COUNT(*) FROM clientes")
-        count = self.cursor.fetchone()[0] + 1
-        return f"CLI{count:04d}"
-    
-    def gerar_codigo_venda(self):
-        """Gera código automático para venda"""
-        self.cursor.execute("SELECT COUNT(*) FROM vendas")
-        count = self.cursor.fetchone()[0] + 1
-        data = datetime.now().strftime("%Y%m%d")
-        return f"VENDA{data}{count:04d}"
     
     def fechar_conexao(self):
         self.conn.close()

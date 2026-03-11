@@ -8,7 +8,7 @@ class TelaConsulta:
         self.db = Database()
         self.janela = tk.Toplevel()
         self.janela.title("Sistema de Estoque - Consultar Estoque")
-        self.janela.geometry("1000x550")  # Aumentei para caber código de barras
+        self.janela.geometry("1000x550")
         
         # Centralizar a janela
         self.janela.update_idletasks()
@@ -42,7 +42,7 @@ class TelaConsulta:
                               value=valor, bg='#f0f0f0', font=("Arial", 9))
             rb.pack(side='left', padx=5)
         
-        btn_buscar = tk.Button(frame_busca, text="BUSCAR", bg="#2196F3", fg="white",
+        btn_buscar = tk.Button(frame_busca, text="🔍 BUSCAR", bg="#2196F3", fg="white",
                               font=("Arial", 9, "bold"), command=self.buscar_produtos)
         btn_buscar.pack(side='left', padx=5)
         
@@ -61,7 +61,7 @@ class TelaConsulta:
         scroll_x = tk.Scrollbar(frame_tabela, orient='horizontal')
         scroll_x.pack(side='bottom', fill='x')
         
-        # Treeview com 9 colunas (incluindo código de barras)
+        # Treeview com 9 colunas
         colunas = ('Código', 'Cód. Barras', 'Nome', 'Categoria', 'Tamanho', 'Cor', 
                    'Quantidade', 'Preço', 'Fornecedor')
         self.tree = ttk.Treeview(frame_tabela, columns=colunas, show='headings',
@@ -71,7 +71,6 @@ class TelaConsulta:
         for col in colunas:
             self.tree.heading(col, text=col)
         
-        # Ajustar larguras específicas
         self.tree.column('Código', width=100)
         self.tree.column('Cód. Barras', width=120)
         self.tree.column('Nome', width=200)
@@ -115,7 +114,7 @@ class TelaConsulta:
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Buscar todos os produtos (9 colunas)
+        # Buscar todos os produtos
         self.db.cursor.execute('''
             SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
                    quantidade, preco_venda, fornecedor
@@ -135,17 +134,17 @@ class TelaConsulta:
             # Tratar código de barras vazio
             codigo_barras = codigo_barras or ""
             
-            # Inserir na treeview com 9 valores na ordem correta
+            # Inserir na treeview
             item = self.tree.insert('', 'end', values=(
-                codigo,           # Código
-                codigo_barras,    # Cód. Barras
-                nome,             # Nome
-                categoria,        # Categoria
-                tamanho,          # Tamanho
-                cor,              # Cor
-                quantidade,       # Quantidade
-                preco_formatado,  # Preço
-                fornecedor        # Fornecedor
+                codigo,
+                codigo_barras,
+                nome,
+                categoria,
+                tamanho,
+                cor,
+                quantidade,
+                preco_formatado,
+                fornecedor
             ))
             
             # Destacar em vermelho se estoque baixo
@@ -199,12 +198,10 @@ class TelaConsulta:
         produtos = self.db.cursor.fetchall()
         
         for produto in produtos:
-            # Desempacotar 9 valores
             codigo, codigo_barras, nome, categoria, tamanho, cor, quantidade, preco, fornecedor = produto
             preco_formatado = f"R$ {preco:.2f}"
             codigo_barras = codigo_barras or ""
             
-            # Inserir na treeview com 9 valores
             item = self.tree.insert('', 'end', values=(
                 codigo,
                 codigo_barras,
@@ -229,15 +226,11 @@ class TelaConsulta:
     def abrir_para_editar(self, event):
         """Abre o produto selecionado para edição com duplo clique"""
         try:
-            # Pegar o item selecionado
             item = self.tree.selection()[0]
-            # Pegar o código do produto (primeira coluna)
             codigo = self.tree.item(item, 'values')[0]
             
-            # Fechar a tela de consulta
             self.janela.destroy()
             
-            # Abrir a tela de gerenciamento
             from gerenciar_produto import TelaGerenciarProduto
             TelaGerenciarProduto(self.menu_principal, codigo)
             
@@ -249,15 +242,11 @@ class TelaConsulta:
     def editar_selecionado(self):
         """Abre o produto selecionado para edição pelo botão"""
         try:
-            # Pegar o item selecionado
             item = self.tree.selection()[0]
-            # Pegar o código do produto
             codigo = self.tree.item(item, 'values')[0]
             
-            # Fechar a tela de consulta
             self.janela.destroy()
             
-            # Abrir a tela de gerenciamento
             from gerenciar_produto import TelaGerenciarProduto
             TelaGerenciarProduto(self.menu_principal, codigo)
             
