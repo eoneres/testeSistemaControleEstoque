@@ -83,7 +83,7 @@ class TelaConsulta:
         # Tags para cores
         self.tree.tag_configure('estoque_baixo', background='#ffcdd2')
         
-        # 🔴 NOVO: Vincular duplo clique para editar
+        # Vincular duplo clique para editar
         self.tree.bind('<Double-1>', self.abrir_para_editar)
         
         # Frame inferior (botões)
@@ -94,7 +94,7 @@ class TelaConsulta:
                                  font=("Arial", 10, "bold"), padx=20, command=self.carregar_produtos)
         btn_atualizar.pack(side='left', padx=5)
         
-        # 🔴 NOVO: Botão para editar produto selecionado
+        # Botão para editar produto selecionado
         btn_editar = tk.Button(frame_botoes, text="EDITAR SELECIONADO", bg="#FF9800", fg="white",
                               font=("Arial", 10, "bold"), padx=20, command=self.editar_selecionado)
         btn_editar.pack(side='left', padx=5)
@@ -103,7 +103,7 @@ class TelaConsulta:
                               font=("Arial", 10, "bold"), padx=20, command=self.voltar_menu)
         btn_voltar.pack(side='left', padx=5)
     
-    # 🔴 NOVO MÉTODO 1: Abrir para editar com duplo clique
+    # Abrir para editar com duplo clique
     def abrir_para_editar(self, event):
         """Abre o produto selecionado para edição quando dá duplo clique"""
         try:
@@ -124,7 +124,7 @@ class TelaConsulta:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao abrir produto: {str(e)}")
     
-    # 🔴 NOVO MÉTODO 2: Editar produto selecionado (pelo botão)
+    # Editar produto selecionado (pelo botão)
     def editar_selecionado(self):
         """Abre o produto selecionado para edição quando clica no botão"""
         try:
