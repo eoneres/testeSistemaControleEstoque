@@ -55,7 +55,7 @@ class Database:
             )
         ''')
         
-        # NOVA TABELA: Movimentação de Estoque
+        # Movimentação de Estoque
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS movimentacoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,7 +73,7 @@ class Database:
             )
         ''')
         
-        # NOVA TABELA: Notas Fiscais
+        # Notas Fiscais
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS notas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,7 +88,7 @@ class Database:
             )
         ''')
         
-        # NOVA TABELA: Itens da Nota
+        # Itens da Nota
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS nota_itens (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
