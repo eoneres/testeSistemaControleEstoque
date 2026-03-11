@@ -7,16 +7,19 @@ class TelaMenu:
         self.db = Database()
         self.janela = tk.Tk()
         self.janela.title("Sistema de Estoque - Menu Principal")
-        self.janela.geometry("400x300")
+        self.janela.geometry("450x400")  # Aumentei um pouco para caber mais botões
         self.janela.resizable(False, False)
         
-         # CORRETO - sem eval
+        # Centralizar
         self.janela.update_idletasks()
-        largura = 400
-        altura = 300
+        largura = 450
+        altura = 400
         x = (self.janela.winfo_screenwidth() // 2) - (largura // 2)
         y = (self.janela.winfo_screenheight() // 2) - (altura // 2)
         self.janela.geometry(f'{largura}x{altura}+{x}+{y}')
+        
+        self.janela.lift()
+        self.janela.focus_force()
         
         self.criar_menu()
         self.janela.mainloop()
@@ -31,14 +34,13 @@ class TelaMenu:
                           font=("Arial", 16, "bold"), fg="#333")
         titulo.pack(pady=20)
         
-        # Botões do menu
+        
         botoes = [
             ("📦 CADASTRAR PRODUTO", self.abrir_cadastro),
             ("🔍 CONSULTAR ESTOQUE", self.abrir_consulta),
             ("💰 REGISTRAR VENDA", self.abrir_venda),
+            ("👥 GERENCIAR CLIENTES", self.abrir_clientes),  # ← NOVO BOTÃO
             ("📊 RELATÓRIOS", self.abrir_relatorios),
-            ("📋 GERENCIAR PRODUTOS", self.abrir_gerenciar),
-
             ("🚪 SAIR", self.sair)
         ]
         
@@ -64,15 +66,15 @@ class TelaMenu:
         self.janela.withdraw()
         TelaVenda(self.janela)
     
+    def abrir_clientes(self):  # ← NOVO MÉTODO
+        from clientes import TelaClientes
+        self.janela.withdraw()
+        TelaClientes(self.janela)
+    
     def abrir_relatorios(self):
         from relatorios import TelaRelatorios
         self.janela.withdraw()
         TelaRelatorios(self.janela)
-        
-    def abrir_gerenciar(self):
-        from gerenciar_produto import TelaGerenciarProduto
-        self.janela.withdraw()
-        TelaGerenciarProduto(self.janela)
     
     def sair(self):
         if messagebox.askyesno("Sair", "Deseja realmente sair do sistema?"):

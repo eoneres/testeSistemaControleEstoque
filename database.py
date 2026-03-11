@@ -9,7 +9,7 @@ class Database:
         self.criar_usuario_padrao()
     
     def criar_tabelas(self):
-        # Tabela de usuários
+        
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,7 +19,7 @@ class Database:
             )
         ''')
         
-        # Tabela de produtos (ATUALIZADA com codigo_barras)
+        
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS produtos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,65 +40,79 @@ class Database:
             )
         ''')
         
-        # Tabela de vendas
+        
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS clientes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT UNIQUE NOT NULL,
+                nome TEXT NOT NULL,
+                cpf TEXT UNIQUE NOT NULL,
+                rg TEXT,
+                telefone TEXT NOT NULL,
+                celular TEXT,
+                email TEXT,
+                data_nascimento TEXT,
+                sexo TEXT,
+                endereco TEXT NOT NULL,
+                numero TEXT,
+                complemento TEXT,
+                bairro TEXT NOT NULL,
+                cidade TEXT NOT NULL,
+                estado TEXT NOT NULL,
+                cep TEXT,
+                data_cadastro TEXT NOT NULL,
+                observacoes TEXT,
+                pontos INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'ativo'  -- 'ativo', 'inativo', 'bloqueado'
+            )
+        ''')
+        
+        
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS pontos_fidelidade (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cliente_codigo TEXT NOT NULL,
+                data_movimento TEXT NOT NULL,
+                hora_movimento TEXT NOT NULL,
+                tipo TEXT NOT NULL,  -- 'ganho', 'resgate', 'ajuste'
+                quantidade INTEGER NOT NULL,
+                saldo_anterior INTEGER NOT NULL,
+                saldo_novo INTEGER NOT NULL,
+                venda_codigo TEXT,
+                motivo TEXT,
+                FOREIGN KEY (cliente_codigo) REFERENCES clientes (codigo)
+            )
+        ''')
+        
+        
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS vendas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_venda TEXT UNIQUE NOT NULL,
                 codigo_produto TEXT NOT NULL,
+                cliente_codigo TEXT,
                 quantidade INTEGER NOT NULL,
                 preco_unitario REAL NOT NULL,
                 total REAL NOT NULL,
                 data_venda TEXT NOT NULL,
                 hora_venda TEXT NOT NULL,
                 numero_nota TEXT,
-                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo)
+                pontos_ganhos INTEGER DEFAULT 0,
+                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo),
+                FOREIGN KEY (cliente_codigo) REFERENCES clientes (codigo)
             )
         ''')
         
-        # NOVA TABELA: Movimentação de Estoque
+        # NOVA TABELA: Blacklist
         self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS movimentacoes (
+            CREATE TABLE IF NOT EXISTS blacklist (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                codigo_produto TEXT NOT NULL,
-                tipo TEXT NOT NULL,
-                quantidade INTEGER NOT NULL,
-                quantidade_anterior INTEGER NOT NULL,
-                quantidade_nova INTEGER NOT NULL,
-                motivo TEXT,
-                numero_nota TEXT,
-                data_movimento TEXT NOT NULL,
-                hora_movimento TEXT NOT NULL,
-                usuario TEXT,
-                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo)
-            )
-        ''')
-        
-        # NOVA TABELA: Notas Fiscais
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS notas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                numero_nota TEXT UNIQUE NOT NULL,
-                tipo TEXT NOT NULL,
-                data_emissao TEXT NOT NULL,
-                valor_total REAL NOT NULL,
-                fornecedor TEXT,
-                cliente TEXT,
-                arquivo_pdf TEXT,
-                observacoes TEXT
-            )
-        ''')
-        
-        # NOVA TABELA: Itens da Nota
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS nota_itens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                numero_nota TEXT NOT NULL,
-                codigo_produto TEXT NOT NULL,
-                quantidade INTEGER NOT NULL,
-                preco_unitario REAL NOT NULL,
-                total REAL NOT NULL,
-                FOREIGN KEY (numero_nota) REFERENCES notas (numero_nota),
-                FOREIGN KEY (codigo_produto) REFERENCES produtos (codigo)
+                cliente_codigo TEXT UNIQUE NOT NULL,
+                motivo TEXT NOT NULL,
+                data_bloqueio TEXT NOT NULL,
+                data_vencimento TEXT,
+                observacoes TEXT,
+                FOREIGN KEY (cliente_codigo) REFERENCES clientes (codigo)
             )
         ''')
         
@@ -133,6 +147,19 @@ class Database:
         ''', (codigo_produto, tipo, quantidade, quantidade_anterior, quantidade_nova,
               motivo, numero_nota, data, hora, usuario))
         self.conn.commit()
+    
+    def gerar_codigo_cliente(self):
+        """Gera código automático para cliente"""
+        self.cursor.execute("SELECT COUNT(*) FROM clientes")
+        count = self.cursor.fetchone()[0] + 1
+        return f"CLI{count:04d}"
+    
+    def gerar_codigo_venda(self):
+        """Gera código automático para venda"""
+        self.cursor.execute("SELECT COUNT(*) FROM vendas")
+        count = self.cursor.fetchone()[0] + 1
+        data = datetime.now().strftime("%Y%m%d")
+        return f"VENDA{data}{count:04d}"
     
     def fechar_conexao(self):
         self.conn.close()

@@ -8,12 +8,12 @@ class TelaConsulta:
         self.db = Database()
         self.janela = tk.Toplevel()
         self.janela.title("Sistema de Estoque - Consultar Estoque")
-        self.janela.geometry("900x500")
+        self.janela.geometry("1000x550")  # Aumentei para caber código de barras
         
         # Centralizar a janela
         self.janela.update_idletasks()
-        largura = 900
-        altura = 500
+        largura = 1000
+        altura = 550
         x = (self.janela.winfo_screenwidth() // 2) - (largura // 2)
         y = (self.janela.winfo_screenheight() // 2) - (altura // 2)
         self.janela.geometry(f'{largura}x{altura}+{x}+{y}')
@@ -34,7 +34,8 @@ class TelaConsulta:
         self.busca_entry.pack(side='left', padx=5)
         
         self.filtro_var = tk.StringVar(value="todos")
-        filtros = [("Todos", "todos"), ("Nome", "nome"), ("Categoria", "categoria"), ("Código", "codigo")]
+        filtros = [("Todos", "todos"), ("Nome", "nome"), ("Categoria", "categoria"), 
+                   ("Código", "codigo"), ("Cód. Barras", "codigo_barras")]
         
         for texto, valor in filtros:
             rb = tk.Radiobutton(frame_busca, text=texto, variable=self.filtro_var, 
@@ -60,20 +61,26 @@ class TelaConsulta:
         scroll_x = tk.Scrollbar(frame_tabela, orient='horizontal')
         scroll_x.pack(side='bottom', fill='x')
         
-        # Treeview
-        colunas = ('Código', 'Nome', 'Categoria', 'Tamanho', 'Cor', 'Quantidade', 'Preço', 'Fornecedor')
+        # Treeview com 9 colunas (incluindo código de barras)
+        colunas = ('Código', 'Cód. Barras', 'Nome', 'Categoria', 'Tamanho', 'Cor', 
+                   'Quantidade', 'Preço', 'Fornecedor')
         self.tree = ttk.Treeview(frame_tabela, columns=colunas, show='headings',
                                  yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
         
         # Configurar colunas
         for col in colunas:
             self.tree.heading(col, text=col)
-            if col == 'Nome':
-                self.tree.column(col, width=200)
-            elif col == 'Preço':
-                self.tree.column(col, width=100)
-            else:
-                self.tree.column(col, width=120)
+        
+        # Ajustar larguras específicas
+        self.tree.column('Código', width=100)
+        self.tree.column('Cód. Barras', width=120)
+        self.tree.column('Nome', width=200)
+        self.tree.column('Categoria', width=100)
+        self.tree.column('Tamanho', width=80)
+        self.tree.column('Cor', width=100)
+        self.tree.column('Quantidade', width=80)
+        self.tree.column('Preço', width=100)
+        self.tree.column('Fornecedor', width=150)
         
         self.tree.pack(fill='both', expand=True)
         
@@ -83,7 +90,7 @@ class TelaConsulta:
         # Tags para cores
         self.tree.tag_configure('estoque_baixo', background='#ffcdd2')
         
-        # 🔴 NOVO: Vincular duplo clique para editar
+        # Vincular duplo clique para editar
         self.tree.bind('<Double-1>', self.abrir_para_editar)
         
         # Frame inferior (botões)
@@ -94,7 +101,6 @@ class TelaConsulta:
                                  font=("Arial", 10, "bold"), padx=20, command=self.carregar_produtos)
         btn_atualizar.pack(side='left', padx=5)
         
-        # 🔴 NOVO: Botão para editar produto selecionado
         btn_editar = tk.Button(frame_botoes, text="EDITAR SELECIONADO", bg="#FF9800", fg="white",
                               font=("Arial", 10, "bold"), padx=20, command=self.editar_selecionado)
         btn_editar.pack(side='left', padx=5)
@@ -103,9 +109,125 @@ class TelaConsulta:
                               font=("Arial", 10, "bold"), padx=20, command=self.voltar_menu)
         btn_voltar.pack(side='left', padx=5)
     
-    # 🔴 NOVO MÉTODO 1: Abrir para editar com duplo clique
+    def carregar_produtos(self):
+        """Carrega todos os produtos na treeview"""
+        # Limpar treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        
+        # Buscar todos os produtos (9 colunas)
+        self.db.cursor.execute('''
+            SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
+                   quantidade, preco_venda, fornecedor
+            FROM produtos
+            ORDER BY nome
+        ''')
+        
+        produtos = self.db.cursor.fetchall()
+        
+        for produto in produtos:
+            # Desempacotar 9 valores
+            codigo, codigo_barras, nome, categoria, tamanho, cor, quantidade, preco, fornecedor = produto
+            
+            # Formatar preço
+            preco_formatado = f"R$ {preco:.2f}"
+            
+            # Tratar código de barras vazio
+            codigo_barras = codigo_barras or ""
+            
+            # Inserir na treeview com 9 valores na ordem correta
+            item = self.tree.insert('', 'end', values=(
+                codigo,           # Código
+                codigo_barras,    # Cód. Barras
+                nome,             # Nome
+                categoria,        # Categoria
+                tamanho,          # Tamanho
+                cor,              # Cor
+                quantidade,       # Quantidade
+                preco_formatado,  # Preço
+                fornecedor        # Fornecedor
+            ))
+            
+            # Destacar em vermelho se estoque baixo
+            if quantidade < 5:
+                self.tree.item(item, tags=('estoque_baixo',))
+    
+    def buscar_produtos(self):
+        """Busca produtos conforme filtro"""
+        termo = self.busca_entry.get()
+        filtro = self.filtro_var.get()
+        
+        if not termo:
+            self.carregar_produtos()
+            return
+        
+        # Limpar treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        
+        # Construir query baseada no filtro
+        if filtro == "todos":
+            query = '''
+                SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
+                       quantidade, preco_venda, fornecedor
+                FROM produtos
+                WHERE nome LIKE ? OR categoria LIKE ? OR codigo LIKE ? OR codigo_barras LIKE ?
+                ORDER BY nome
+            '''
+            params = (f'%{termo}%', f'%{termo}%', f'%{termo}%', f'%{termo}%')
+        elif filtro == "codigo":
+            query = '''
+                SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
+                       quantidade, preco_venda, fornecedor
+                FROM produtos
+                WHERE codigo LIKE ? OR codigo_barras LIKE ?
+                ORDER BY nome
+            '''
+            params = (f'%{termo}%', f'%{termo}%')
+        else:
+            coluna = filtro
+            query = f'''
+                SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
+                       quantidade, preco_venda, fornecedor
+                FROM produtos
+                WHERE {coluna} LIKE ?
+                ORDER BY nome
+            '''
+            params = (f'%{termo}%',)
+        
+        self.db.cursor.execute(query, params)
+        produtos = self.db.cursor.fetchall()
+        
+        for produto in produtos:
+            # Desempacotar 9 valores
+            codigo, codigo_barras, nome, categoria, tamanho, cor, quantidade, preco, fornecedor = produto
+            preco_formatado = f"R$ {preco:.2f}"
+            codigo_barras = codigo_barras or ""
+            
+            # Inserir na treeview com 9 valores
+            item = self.tree.insert('', 'end', values=(
+                codigo,
+                codigo_barras,
+                nome,
+                categoria,
+                tamanho,
+                cor,
+                quantidade,
+                preco_formatado,
+                fornecedor
+            ))
+            
+            if quantidade < 5:
+                self.tree.item(item, tags=('estoque_baixo',))
+    
+    def limpar_busca(self):
+        """Limpa os campos de busca e recarrega produtos"""
+        self.busca_entry.delete(0, tk.END)
+        self.filtro_var.set("todos")
+        self.carregar_produtos()
+    
     def abrir_para_editar(self, event):
-        """Abre o produto selecionado para edição quando dá duplo clique"""
+        """Abre o produto selecionado para edição com duplo clique"""
         try:
             # Pegar o item selecionado
             item = self.tree.selection()[0]
@@ -115,7 +237,7 @@ class TelaConsulta:
             # Fechar a tela de consulta
             self.janela.destroy()
             
-            # Abrir a tela de gerenciamento com o código do produto
+            # Abrir a tela de gerenciamento
             from gerenciar_produto import TelaGerenciarProduto
             TelaGerenciarProduto(self.menu_principal, codigo)
             
@@ -124,9 +246,8 @@ class TelaConsulta:
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao abrir produto: {str(e)}")
     
-    # 🔴 NOVO MÉTODO 2: Editar produto selecionado (pelo botão)
     def editar_selecionado(self):
-        """Abre o produto selecionado para edição quando clica no botão"""
+        """Abre o produto selecionado para edição pelo botão"""
         try:
             # Pegar o item selecionado
             item = self.tree.selection()[0]
@@ -143,84 +264,8 @@ class TelaConsulta:
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um produto para editar!")
     
-    def carregar_produtos(self):
-        # Limpar treeview
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        
-        # Buscar todos os produtos
-        self.db.cursor.execute('''
-            SELECT codigo, nome, categoria, tamanho, cor, quantidade, preco_venda, fornecedor
-            FROM produtos
-            ORDER BY nome
-        ''')
-        
-        produtos = self.db.cursor.fetchall()
-        
-        for produto in produtos:
-            codigo, nome, categoria, tamanho, cor, quantidade, preco, fornecedor = produto
-            
-            # Formatar preço
-            preco_formatado = f"R$ {preco:.2f}"
-            
-            # Inserir na tree
-            item = self.tree.insert('', 'end', values=(codigo, nome, categoria, tamanho, 
-                                                       cor, quantidade, preco_formatado, fornecedor))
-            
-            # Destacar em vermelho se estoque baixo
-            if quantidade < 5:
-                self.tree.item(item, tags=('estoque_baixo',))
-    
-    def buscar_produtos(self):
-        termo = self.busca_entry.get()
-        filtro = self.filtro_var.get()
-        
-        if not termo:
-            self.carregar_produtos()
-            return
-        
-        # Limpar treeview
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        
-        # Construir query baseada no filtro
-        if filtro == "todos":
-            query = '''
-                SELECT codigo, nome, categoria, tamanho, cor, quantidade, preco_venda, fornecedor
-                FROM produtos
-                WHERE nome LIKE ? OR categoria LIKE ? OR codigo LIKE ?
-                ORDER BY nome
-            '''
-            params = (f'%{termo}%', f'%{termo}%', f'%{termo}%')
-        else:
-            coluna = filtro
-            query = f'''
-                SELECT codigo, nome, categoria, tamanho, cor, quantidade, preco_venda, fornecedor
-                FROM produtos
-                WHERE {coluna} LIKE ?
-                ORDER BY nome
-            '''
-            params = (f'%{termo}%',)
-        
-        self.db.cursor.execute(query, params)
-        produtos = self.db.cursor.fetchall()
-        
-        for produto in produtos:
-            codigo, nome, categoria, tamanho, cor, quantidade, preco, fornecedor = produto
-            preco_formatado = f"R$ {preco:.2f}"
-            
-            item = self.tree.insert('', 'end', values=(codigo, nome, categoria, tamanho, 
-                                                       cor, quantidade, preco_formatado, fornecedor))
-            
-            if quantidade < 5:
-                self.tree.item(item, tags=('estoque_baixo',))
-    
-    def limpar_busca(self):
-        self.busca_entry.delete(0, tk.END)
-        self.filtro_var.set("todos")
-        self.carregar_produtos()
-    
     def voltar_menu(self):
+        """Volta para o menu principal"""
         self.db.fechar_conexao()
         self.janela.destroy()
         self.menu_principal.deiconify()

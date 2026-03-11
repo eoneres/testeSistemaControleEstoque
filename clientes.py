@@ -1,0 +1,971 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from database import Database
+from datetime import datetime
+
+class TelaClientes:
+    def __init__(self, menu_principal):
+        self.menu_principal = menu_principal
+        self.db = Database()
+        self.janela = tk.Toplevel()
+        self.janela.title("Sistema de Estoque - Gerenciar Clientes")
+        self.janela.geometry("1000x700")
+        self.janela.resizable(False, False)
+        
+        # Centralizar
+        self.janela.update_idletasks()
+        largura = 1000
+        altura = 700
+        x = (self.janela.winfo_screenwidth() // 2) - (largura // 2)
+        y = (self.janela.winfo_screenheight() // 2) - (altura // 2)
+        self.janela.geometry(f'{largura}x{altura}+{x}+{y}')
+        
+        self.janela.lift()
+        self.janela.focus_force()
+        
+        self.entries = {}
+        self.cliente_atual = None
+        
+        self.criar_interface()
+        self.carregar_clientes()
+        self.carregar_blacklist()
+        self.janela.protocol("WM_DELETE_WINDOW", self.voltar)
+        self.janela.mainloop()
+    
+    def criar_interface(self):
+        # Notebook (abas)
+        notebook = ttk.Notebook(self.janela)
+        notebook.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # ABA 1: Lista de Clientes
+        frame_lista = ttk.Frame(notebook)
+        notebook.add(frame_lista, text="📋 Lista de Clientes")
+        self.criar_aba_lista(frame_lista)
+        
+        # ABA 2: Cadastro de Cliente
+        frame_cadastro = ttk.Frame(notebook)
+        notebook.add(frame_cadastro, text="➕ Novo Cliente")
+        self.criar_aba_cadastro(frame_cadastro)
+        
+        # ABA 3: Blacklist
+        frame_blacklist = ttk.Frame(notebook)
+        notebook.add(frame_blacklist, text="🚫 Blacklist")
+        self.criar_aba_blacklist(frame_blacklist)
+    
+    def criar_aba_lista(self, parent):
+        # Frame de busca
+        frame_busca = tk.Frame(parent, bg='#f0f0f0', padx=10, pady=10)
+        frame_busca.pack(fill='x')
+        
+        tk.Label(frame_busca, text="Buscar:", bg='#f0f0f0', font=("Arial", 10)).pack(side='left', padx=5)
+        
+        self.busca_entry = tk.Entry(frame_busca, font=("Arial", 10), width=30)
+        self.busca_entry.pack(side='left', padx=5)
+        
+        self.filtro_var = tk.StringVar(value="nome")
+        filtros = [("Nome", "nome"), ("CPF", "cpf"), ("Telefone", "telefone")]
+        
+        for texto, valor in filtros:
+            rb = tk.Radiobutton(frame_busca, text=texto, variable=self.filtro_var, 
+                              value=valor, bg='#f0f0f0', font=("Arial", 9))
+            rb.pack(side='left', padx=5)
+        
+        btn_buscar = tk.Button(frame_busca, text="🔍 BUSCAR", bg="#2196F3", fg="white",
+                              font=("Arial", 9, "bold"), command=self.buscar_clientes)
+        btn_buscar.pack(side='left', padx=5)
+        
+        btn_limpar = tk.Button(frame_busca, text="LIMPAR", bg="#FF9800", fg="white",
+                              font=("Arial", 9, "bold"), command=self.limpar_busca)
+        btn_limpar.pack(side='left', padx=5)
+        
+        # Frame da tabela
+        frame_tabela = tk.Frame(parent)
+        frame_tabela.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Scrollbars
+        scroll_y = tk.Scrollbar(frame_tabela)
+        scroll_y.pack(side='right', fill='y')
+        
+        scroll_x = tk.Scrollbar(frame_tabela, orient='horizontal')
+        scroll_x.pack(side='bottom', fill='x')
+        
+        # Treeview
+        colunas = ('Código', 'Nome', 'CPF', 'Telefone', 'Cidade', 'Pontos', 'Status')
+        self.tree_clientes = ttk.Treeview(frame_tabela, columns=colunas, show='headings',
+                                         yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        
+        # Configurar colunas
+        larguras = [100, 250, 150, 120, 150, 80, 100]
+        for col, larg in zip(colunas, larguras):
+            self.tree_clientes.heading(col, text=col)
+            self.tree_clientes.column(col, width=larg)
+        
+        self.tree_clientes.pack(fill='both', expand=True)
+        
+        scroll_y.config(command=self.tree_clientes.yview)
+        scroll_x.config(command=self.tree_clientes.xview)
+        
+        # Tags para cores
+        self.tree_clientes.tag_configure('bloqueado', background='#ffcdd2')
+        self.tree_clientes.tag_configure('inativo', background='#fff3e0')
+        
+        # Bind para duplo clique (ver detalhes)
+        self.tree_clientes.bind('<Double-1>', self.ver_detalhes_cliente)
+        
+        # Frame de botões
+        frame_botoes = tk.Frame(parent, pady=10)
+        frame_botoes.pack()
+        
+        btn_novo = tk.Button(frame_botoes, text="➕ NOVO CLIENTE", bg="#4CAF50", fg="white",
+                            font=("Arial", 10, "bold"), padx=20, command=self.novo_cliente)
+        btn_novo.pack(side='left', padx=5)
+        
+        btn_detalhes = tk.Button(frame_botoes, text="📋 VER DETALHES", bg="#2196F3", fg="white",
+                                font=("Arial", 10, "bold"), padx=20, command=self.ver_detalhes)
+        btn_detalhes.pack(side='left', padx=5)
+        
+        btn_editar = tk.Button(frame_botoes, text="✏️ EDITAR", bg="#FF9800", fg="white",
+                              font=("Arial", 10, "bold"), padx=20, command=self.editar_cliente)
+        btn_editar.pack(side='left', padx=5)
+        
+        btn_historico = tk.Button(frame_botoes, text="📊 HISTÓRICO", bg="#9C27B0", fg="white",
+                                 font=("Arial", 10, "bold"), padx=20, command=self.ver_historico_compras)
+        btn_historico.pack(side='left', padx=5)
+        
+        btn_bloquear = tk.Button(frame_botoes, text="🚫 BLOQUEAR", bg="#f44336", fg="white",
+                                font=("Arial", 10, "bold"), padx=20, command=self.bloquear_cliente)
+        btn_bloquear.pack(side='left', padx=5)
+    
+    def criar_aba_cadastro(self, parent):
+        # Canvas com scroll
+        canvas = tk.Canvas(parent)
+        scrollbar = tk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        frame = tk.Frame(scrollable_frame, padx=30, pady=20)
+        frame.pack(expand=True, fill='both')
+        
+        # Título (CRIANDO O ATRIBUTO self.titulo_cadastro)
+        self.titulo_cadastro = tk.Label(frame, text="CADASTRO DE CLIENTE", 
+                                        font=("Arial", 16, "bold"), fg="#333")
+        self.titulo_cadastro.pack(pady=20)
+        
+        # Criar um notebook interno para organizar
+        interno_notebook = ttk.Notebook(frame)
+        interno_notebook.pack(fill='both', expand=True, pady=10)
+        
+        # Aba Dados Pessoais
+        frame_dados = ttk.Frame(interno_notebook)
+        interno_notebook.add(frame_dados, text="Dados Pessoais")
+        self.criar_dados_pessoais(frame_dados)
+        
+        # Aba Endereço
+        frame_endereco = ttk.Frame(interno_notebook)
+        interno_notebook.add(frame_endereco, text="Endereço")
+        self.criar_endereco(frame_endereco)
+        
+        # Aba Observações
+        frame_obs = ttk.Frame(interno_notebook)
+        interno_notebook.add(frame_obs, text="Observações")
+        self.criar_observacoes(frame_obs)
+        
+        # Frame para botões
+        frame_botoes = tk.Frame(frame, bg='#f0f0f0', pady=20)
+        frame_botoes.pack(fill='x', pady=20)
+        
+        # Botão Salvar (CRIANDO O ATRIBUTO self.btn_salvar)
+        self.btn_salvar = tk.Button(frame_botoes, text="💾 SALVAR CLIENTE", 
+                                   bg="#4CAF50", fg="white", font=("Arial", 12, "bold"),
+                                   padx=30, pady=10, command=self.salvar_cliente)
+        self.btn_salvar.pack(side='left', padx=10, expand=True)
+        
+        btn_limpar = tk.Button(frame_botoes, text="🔄 LIMPAR", 
+                               bg="#FF9800", fg="white", font=("Arial", 12, "bold"),
+                               padx=30, pady=10, command=self.limpar_cadastro)
+        btn_limpar.pack(side='left', padx=10, expand=True)
+        
+        btn_cancelar = tk.Button(frame_botoes, text="↩️ CANCELAR", 
+                                bg="#f44336", fg="white", font=("Arial", 12, "bold"),
+                                padx=30, pady=10, command=self.cancelar_edicao)
+        btn_cancelar.pack(side='left', padx=10, expand=True)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def criar_dados_pessoais(self, parent):
+        frame = tk.Frame(parent, padx=20, pady=20)
+        frame.pack(fill='both', expand=True)
+    
+        # Configurar grid com 3 colunas de tamanhos iguais
+        for i in range(3):
+            frame.columnconfigure(i, weight=1, uniform="col")
+    
+        # Linha 0: Nome Completo (ocupa 2 colunas) e CPF (1 coluna)
+        tk.Label(frame, text="Nome Completo:*", font=("Arial", 10, "bold")).grid(
+            row=0, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["nome"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["nome"].grid(row=1, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="CPF:*", font=("Arial", 10, "bold")).grid(
+            row=0, column=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["cpf"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["cpf"].grid(row=1, column=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        # Linha 2: RG
+        tk.Label(frame, text="RG:", font=("Arial", 10, "bold")).grid(
+            row=2, column=0, sticky='w', padx=5, pady=(10,0))
+        self.entries["rg"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["rg"].grid(row=3, column=0, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        # Linha 2-3: Data Nascimento e Sexo
+        tk.Label(frame, text="Data Nascimento:", font=("Arial", 10, "bold")).grid(
+            row=2, column=1, sticky='w', padx=5, pady=(10,0))
+        self.entries["data_nascimento"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["data_nascimento"].grid(row=3, column=1, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="Sexo:", font=("Arial", 10, "bold")).grid(
+            row=2, column=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["sexo"] = ttk.Combobox(frame, values=["Masculino", "Feminino", "Outro"], 
+                                        state='readonly', font=("Arial", 10))
+        self.entries["sexo"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        # Linha 4: E-mail
+        tk.Label(frame, text="E-mail:", font=("Arial", 10, "bold")).grid(
+            row=4, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["email"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["email"].grid(row=5, column=0, columnspan=3, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        # Linha 6: Telefone Fixo e Celular
+        tk.Label(frame, text="Telefone Fixo:*", font=("Arial", 10, "bold")).grid(
+            row=6, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["telefone"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["telefone"].grid(row=7, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="Celular:", font=("Arial", 10, "bold")).grid(
+            row=6, column=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["celular"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["celular"].grid(row=7, column=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+    def criar_endereco(self, parent):
+        frame = tk.Frame(parent, padx=20, pady=20)
+        frame.pack(fill='both', expand=True)
+    
+        # Configurar grid com 4 colunas para melhor organização
+        for i in range(4):
+            frame.columnconfigure(i, weight=1, uniform="col")
+    
+        # Linha 0: CEP e Endereço
+        tk.Label(frame, text="CEP:", font=("Arial", 10, "bold")).grid(
+            row=0, column=0, sticky='w', padx=5, pady=(10,0))
+        self.entries["cep"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["cep"].grid(row=1, column=0, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="Endereço:*", font=("Arial", 10, "bold")).grid(
+            row=0, column=1, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["endereco"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["endereco"].grid(row=1, column=1, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="Número:", font=("Arial", 10, "bold")).grid(
+            row=0, column=3, sticky='w', padx=5, pady=(10,0))
+        self.entries["numero"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1, width=10)
+        self.entries["numero"].grid(row=1, column=3, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        # Linha 2: Complemento e Bairro
+        tk.Label(frame, text="Complemento:", font=("Arial", 10, "bold")).grid(
+            row=2, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["complemento"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["complemento"].grid(row=3, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="Bairro:*", font=("Arial", 10, "bold")).grid(
+            row=2, column=2, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["bairro"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["bairro"].grid(row=3, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        # Linha 4: Cidade e Estado
+        tk.Label(frame, text="Cidade:*", font=("Arial", 10, "bold")).grid(
+            row=4, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["cidade"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
+        self.entries["cidade"].grid(row=5, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+        tk.Label(frame, text="Estado:*", font=("Arial", 10, "bold")).grid(
+            row=4, column=2, columnspan=2, sticky='w', padx=5, pady=(10,0))
+        self.entries["estado"] = ttk.Combobox(frame, 
+                                         values=["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+                                                 "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+                                                 "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"],
+                                         state='readonly', font=("Arial", 10))
+        self.entries["estado"].grid(row=5, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+    
+    def criar_observacoes(self, parent):
+        frame = tk.Frame(parent, padx=20, pady=20)
+        frame.pack(fill='both', expand=True)
+        
+        tk.Label(frame, text="Observações:", font=("Arial", 10, "bold")).pack(anchor='w')
+        
+        self.entries["observacoes"] = tk.Text(frame, height=8, width=60, 
+                                              font=("Arial", 10), relief='solid', bd=1)
+        self.entries["observacoes"].pack(fill='both', expand=True, pady=10)
+    
+    def criar_aba_blacklist(self, parent):
+        frame = tk.Frame(parent, padx=10, pady=10)
+        frame.pack(fill='both', expand=True)
+        
+        # Treeview para blacklist
+        colunas = ('Código', 'Nome', 'CPF', 'Motivo', 'Data Bloqueio', 'Vencimento')
+        self.tree_blacklist = ttk.Treeview(frame, columns=colunas, show='headings', height=15)
+        
+        for col in colunas:
+            self.tree_blacklist.heading(col, text=col)
+        
+        self.tree_blacklist.column('Código', width=100)
+        self.tree_blacklist.column('Nome', width=250)
+        self.tree_blacklist.column('CPF', width=150)
+        self.tree_blacklist.column('Motivo', width=200)
+        self.tree_blacklist.column('Data Bloqueio', width=120)
+        self.tree_blacklist.column('Vencimento', width=120)
+        
+        self.tree_blacklist.pack(fill='both', expand=True)
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=self.tree_blacklist.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.tree_blacklist.configure(yscrollcommand=scrollbar.set)
+        
+        # Frame de botões
+        frame_botoes = tk.Frame(frame, pady=10)
+        frame_botoes.pack()
+        
+        btn_desbloquear = tk.Button(frame_botoes, text="🔓 DESBLOQUEAR", bg="#4CAF50", fg="white",
+                                   font=("Arial", 10, "bold"), padx=20, command=self.desbloquear_cliente)
+        btn_desbloquear.pack(side='left', padx=5)
+    
+    def carregar_clientes(self):
+        """Carrega lista de clientes"""
+        for item in self.tree_clientes.get_children():
+            self.tree_clientes.delete(item)
+        
+        self.db.cursor.execute('''
+            SELECT codigo, nome, cpf, telefone, cidade, pontos, status
+            FROM clientes
+            ORDER BY nome
+        ''')
+        
+        clientes = self.db.cursor.fetchall()
+        
+        for cliente in clientes:
+            codigo, nome, cpf, telefone, cidade, pontos, status = cliente
+            
+            # Formatar CPF
+            if cpf and len(cpf) == 11:
+                cpf = f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+            
+            item = self.tree_clientes.insert('', 'end', values=(
+                codigo, nome, cpf, telefone, cidade, pontos, status
+            ))
+            
+            if status == 'bloqueado':
+                self.tree_clientes.item(item, tags=('bloqueado',))
+            elif status == 'inativo':
+                self.tree_clientes.item(item, tags=('inativo',))
+    
+    def carregar_blacklist(self):
+        """Carrega lista de clientes bloqueados"""
+        for item in self.tree_blacklist.get_children():
+            self.tree_blacklist.delete(item)
+        
+        self.db.cursor.execute('''
+            SELECT c.codigo, c.nome, c.cpf, b.motivo, b.data_bloqueio, b.data_vencimento
+            FROM blacklist b
+            JOIN clientes c ON b.cliente_codigo = c.codigo
+            ORDER BY b.data_bloqueio DESC
+        ''')
+        
+        bloqueados = self.db.cursor.fetchall()
+        
+        for b in bloqueados:
+            # Formatar CPF
+            cpf = b[2]
+            if cpf and len(cpf) == 11:
+                cpf = f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+            
+            self.tree_blacklist.insert('', 'end', values=(
+                b[0], b[1], cpf, b[3], b[4], b[5] or ""
+            ))
+    
+    def buscar_clientes(self):
+        """Busca clientes conforme filtro"""
+        termo = self.busca_entry.get()
+        filtro = self.filtro_var.get()
+        
+        if not termo:
+            self.carregar_clientes()
+            return
+        
+        for item in self.tree_clientes.get_children():
+            self.tree_clientes.delete(item)
+        
+        query = f'''
+            SELECT codigo, nome, cpf, telefone, cidade, pontos, status
+            FROM clientes
+            WHERE {filtro} LIKE ?
+            ORDER BY nome
+        '''
+        
+        self.db.cursor.execute(query, (f'%{termo}%',))
+        clientes = self.db.cursor.fetchall()
+        
+        for cliente in clientes:
+            codigo, nome, cpf, telefone, cidade, pontos, status = cliente
+            
+            if cpf and len(cpf) == 11:
+                cpf = f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+            
+            item = self.tree_clientes.insert('', 'end', values=(
+                codigo, nome, cpf, telefone, cidade, pontos, status
+            ))
+            
+            if status == 'bloqueado':
+                self.tree_clientes.item(item, tags=('bloqueado',))
+            elif status == 'inativo':
+                self.tree_clientes.item(item, tags=('inativo',))
+    
+    def limpar_busca(self):
+        """Limpa busca e recarrega clientes"""
+        self.busca_entry.delete(0, tk.END)
+        self.filtro_var.set("nome")
+        self.carregar_clientes()
+    
+    def novo_cliente(self):
+        """Muda para aba de cadastro"""
+        self.cliente_atual = None
+        self.limpar_cadastro()
+        self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
+        self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
+        
+        notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
+        notebook.select(1)
+    
+    def editar_cliente(self):
+        """Editar cliente selecionado"""
+        try:
+            item = self.tree_clientes.selection()[0]
+            codigo = self.tree_clientes.item(item, 'values')[0]
+            
+            # Buscar dados completos do cliente
+            self.db.cursor.execute('SELECT * FROM clientes WHERE codigo = ?', (codigo,))
+            cliente = self.db.cursor.fetchone()
+            
+            if cliente:
+                self.cliente_atual = cliente
+                
+                # Limpar campos
+                self.limpar_cadastro()
+                
+                # Preencher campos do formulário
+                self.entries["nome"].insert(0, cliente[2])
+                self.entries["cpf"].insert(0, cliente[3])
+                self.entries["rg"].insert(0, cliente[4] or "")
+                self.entries["telefone"].insert(0, cliente[5])
+                self.entries["celular"].insert(0, cliente[6] or "")
+                self.entries["email"].insert(0, cliente[7] or "")
+                self.entries["data_nascimento"].insert(0, cliente[8] or "")
+                self.entries["sexo"].set(cliente[9] or "")
+                self.entries["endereco"].insert(0, cliente[10])
+                self.entries["numero"].insert(0, cliente[11] or "")
+                self.entries["complemento"].insert(0, cliente[12] or "")
+                self.entries["bairro"].insert(0, cliente[13])
+                self.entries["cidade"].insert(0, cliente[14])
+                self.entries["estado"].set(cliente[15])
+                self.entries["cep"].insert(0, cliente[16] or "")
+                self.entries["observacoes"].insert("1.0", cliente[18] or "")
+                
+                # Mudar título e botão
+                self.titulo_cadastro.config(text="EDITAR CLIENTE")
+                self.btn_salvar.config(text="💾 ATUALIZAR CLIENTE", command=self.atualizar_cliente)
+                
+                # Ir para aba de edição
+                notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
+                notebook.select(1)
+                
+        except IndexError:
+            messagebox.showwarning("Aviso", "Selecione um cliente para editar!")
+    
+    def cancelar_edicao(self):
+        """Cancela edição e volta para lista"""
+        self.cliente_atual = None
+        self.limpar_cadastro()
+        self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
+        self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
+        
+        notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
+        notebook.select(0)
+    
+    def limpar_cadastro(self):
+        """Limpa todos os campos do cadastro"""
+        for campo, entry in self.entries.items():
+            if campo == "observacoes":
+                entry.delete("1.0", tk.END)
+            elif isinstance(entry, tk.Entry):
+                entry.delete(0, tk.END)
+            elif isinstance(entry, ttk.Combobox):
+                entry.set('')
+    
+    def salvar_cliente(self):
+        """Salva novo cliente no banco"""
+        try:
+            # Coletar dados
+            nome = self.entries["nome"].get().strip()
+            cpf = self.entries["cpf"].get().strip()
+            telefone = self.entries["telefone"].get().strip()
+            endereco = self.entries["endereco"].get().strip()
+            bairro = self.entries["bairro"].get().strip()
+            cidade = self.entries["cidade"].get().strip()
+            estado = self.entries["estado"].get().strip()
+            
+            # Campos opcionais
+            rg = self.entries["rg"].get().strip()
+            celular = self.entries["celular"].get().strip()
+            email = self.entries["email"].get().strip()
+            data_nascimento = self.entries["data_nascimento"].get().strip()
+            sexo = self.entries["sexo"].get().strip()
+            numero = self.entries["numero"].get().strip()
+            complemento = self.entries["complemento"].get().strip()
+            cep = self.entries["cep"].get().strip()
+            observacoes = self.entries["observacoes"].get("1.0", tk.END).strip()
+            
+            # Validar campos obrigatórios
+            campos_obrigatorios = {
+                "Nome": nome,
+                "CPF": cpf,
+                "Telefone": telefone,
+                "Endereço": endereco,
+                "Bairro": bairro,
+                "Cidade": cidade,
+                "Estado": estado
+            }
+            
+            campos_vazios = [nome_campo for nome_campo, valor in campos_obrigatorios.items() if not valor]
+            
+            if campos_vazios:
+                messagebox.showerror("Erro", 
+                                   f"Campos obrigatórios:\n" + 
+                                   "\n".join(f"• {campo}" for campo in campos_vazios))
+                return
+            
+            # Validar CPF (apenas números)
+            cpf_limpo = ''.join(filter(str.isdigit, cpf))
+            if len(cpf_limpo) != 11:
+                messagebox.showerror("Erro", "CPF deve conter 11 dígitos!")
+                return
+            
+            # Verificar se CPF já existe
+            self.db.cursor.execute("SELECT codigo FROM clientes WHERE cpf = ?", (cpf_limpo,))
+            if self.db.cursor.fetchone():
+                messagebox.showerror("Erro", "CPF já cadastrado!")
+                return
+            
+            # Gerar código do cliente
+            codigo = self.db.gerar_codigo_cliente()
+            
+            # Inserir no banco
+            self.db.cursor.execute('''
+                INSERT INTO clientes (
+                    codigo, nome, cpf, rg, telefone, celular, email,
+                    data_nascimento, sexo, endereco, numero, complemento,
+                    bairro, cidade, estado, cep, data_cadastro, observacoes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (codigo, nome, cpf_limpo, rg, telefone, celular, email,
+                  data_nascimento, sexo, endereco, numero, complemento,
+                  bairro, cidade, estado, cep, datetime.now().strftime("%d/%m/%Y"),
+                  observacoes))
+            
+            self.db.conn.commit()
+            
+            messagebox.showinfo("Sucesso", f"Cliente cadastrado com sucesso!\nCódigo: {codigo}")
+            
+            # Limpar campos e recarregar lista
+            self.limpar_cadastro()
+            self.carregar_clientes()
+            self.carregar_blacklist()
+            
+            # Voltar para aba de lista
+            notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
+            notebook.select(0)
+            
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao cadastrar cliente: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    def atualizar_cliente(self):
+        """Atualiza dados do cliente existente"""
+        try:
+            if not self.cliente_atual:
+                return
+            
+            # Coletar dados
+            nome = self.entries["nome"].get().strip()
+            cpf = self.entries["cpf"].get().strip()
+            telefone = self.entries["telefone"].get().strip()
+            endereco = self.entries["endereco"].get().strip()
+            bairro = self.entries["bairro"].get().strip()
+            cidade = self.entries["cidade"].get().strip()
+            estado = self.entries["estado"].get().strip()
+            
+            # Campos opcionais
+            rg = self.entries["rg"].get().strip()
+            celular = self.entries["celular"].get().strip()
+            email = self.entries["email"].get().strip()
+            data_nascimento = self.entries["data_nascimento"].get().strip()
+            sexo = self.entries["sexo"].get().strip()
+            numero = self.entries["numero"].get().strip()
+            complemento = self.entries["complemento"].get().strip()
+            cep = self.entries["cep"].get().strip()
+            observacoes = self.entries["observacoes"].get("1.0", tk.END).strip()
+            
+            # Validar campos obrigatórios
+            if not all([nome, cpf, telefone, endereco, bairro, cidade, estado]):
+                messagebox.showerror("Erro", "Preencha todos os campos obrigatórios!")
+                return
+            
+            # Validar CPF
+            cpf_limpo = ''.join(filter(str.isdigit, cpf))
+            if len(cpf_limpo) != 11:
+                messagebox.showerror("Erro", "CPF deve conter 11 dígitos!")
+                return
+            
+            # Verificar se CPF já existe para outro cliente
+            self.db.cursor.execute('''
+                SELECT codigo FROM clientes 
+                WHERE cpf = ? AND codigo != ?
+            ''', (cpf_limpo, self.cliente_atual[1]))
+            
+            if self.db.cursor.fetchone():
+                messagebox.showerror("Erro", "CPF já cadastrado para outro cliente!")
+                return
+            
+            # Atualizar no banco
+            self.db.cursor.execute('''
+                UPDATE clientes SET
+                    nome = ?, cpf = ?, rg = ?, telefone = ?, celular = ?, email = ?,
+                    data_nascimento = ?, sexo = ?, endereco = ?, numero = ?, complemento = ?,
+                    bairro = ?, cidade = ?, estado = ?, cep = ?, observacoes = ?
+                WHERE codigo = ?
+            ''', (nome, cpf_limpo, rg, telefone, celular, email,
+                  data_nascimento, sexo, endereco, numero, complemento,
+                  bairro, cidade, estado, cep, observacoes,
+                  self.cliente_atual[1]))
+            
+            self.db.conn.commit()
+            
+            messagebox.showinfo("Sucesso", "Cliente atualizado com sucesso!")
+            
+            # Limpar e recarregar
+            self.cliente_atual = None
+            self.limpar_cadastro()
+            self.carregar_clientes()
+            self.carregar_blacklist()
+            
+            # Resetar formulário e voltar para lista
+            self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
+            self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
+            
+            notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
+            notebook.select(0)
+            
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao atualizar cliente: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    def ver_detalhes_cliente(self, event):
+        """Ver detalhes do cliente com duplo clique"""
+        self.ver_detalhes()
+    
+    def ver_detalhes(self):
+        """Ver detalhes do cliente selecionado"""
+        try:
+            item = self.tree_clientes.selection()[0]
+            codigo = self.tree_clientes.item(item, 'values')[0]
+            
+            # Buscar dados completos do cliente
+            self.db.cursor.execute('SELECT * FROM clientes WHERE codigo = ?', (codigo,))
+            cliente = self.db.cursor.fetchone()
+            
+            if cliente:
+                # Formatar CPF
+                cpf = cliente[3]
+                if cpf and len(cpf) == 11:
+                    cpf = f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+                
+                detalhes = f"""
+╔════════════════════════════════════════════════════════════╗
+║                    DETALHES DO CLIENTE                     ║
+╠════════════════════════════════════════════════════════════╣
+║ Código: {cliente[1]}                                       
+║ Nome: {cliente[2]}                                          
+║ CPF: {cpf}                                                  
+║ RG: {cliente[4] or '---'}                                   
+║ Telefone: {cliente[5]}                                      
+║ Celular: {cliente[6] or '---'}                              
+║ E-mail: {cliente[7] or '---'}                               
+║ Data Nasc.: {cliente[8] or '---'}                           
+║ Sexo: {cliente[9] or '---'}                                 
+╠════════════════════════════════════════════════════════════╣
+║                    ENDEREÇO                                 ║
+╠════════════════════════════════════════════════════════════╣
+║ {cliente[10]}, {cliente[11] or 's/n'} {cliente[12] or ''}   
+║ {cliente[13]} - {cliente[14]}/{cliente[15]}                 
+║ CEP: {cliente[16] or '---'}                                 
+╠════════════════════════════════════════════════════════════╣
+║ Pontos: {cliente[19]}  |  Status: {cliente[20]}             
+╚════════════════════════════════════════════════════════════╝
+                """
+                
+                # Criar janela de detalhes
+                detalhes_janela = tk.Toplevel(self.janela)
+                detalhes_janela.title("Detalhes do Cliente")
+                detalhes_janela.geometry("600x500")
+                
+                # Centralizar
+                detalhes_janela.update_idletasks()
+                largura = 600
+                altura = 500
+                x = (detalhes_janela.winfo_screenwidth() // 2) - (largura // 2)
+                y = (detalhes_janela.winfo_screenheight() // 2) - (altura // 2)
+                detalhes_janela.geometry(f'{largura}x{altura}+{x}+{y}')
+                
+                # Área de texto
+                texto = tk.Text(detalhes_janela, font=("Courier", 10), padx=20, pady=20)
+                texto.pack(fill='both', expand=True)
+                texto.insert('1.0', detalhes)
+                texto.config(state='disabled')
+                
+                # Botão fechar
+                btn_fechar = tk.Button(detalhes_janela, text="FECHAR", 
+                                       bg="#f44336", fg="white", font=("Arial", 10, "bold"),
+                                       command=detalhes_janela.destroy)
+                btn_fechar.pack(pady=10)
+                
+        except IndexError:
+            messagebox.showwarning("Aviso", "Selecione um cliente para ver detalhes!")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao carregar detalhes: {str(e)}")
+    
+    def ver_historico_compras(self):
+        """Ver histórico de compras do cliente selecionado"""
+        try:
+            item = self.tree_clientes.selection()[0]
+            codigo = self.tree_clientes.item(item, 'values')[0]
+            nome = self.tree_clientes.item(item, 'values')[1]
+            
+            # Buscar compras do cliente
+            self.db.cursor.execute('''
+                SELECT v.data_venda, v.codigo_venda, p.nome, v.quantidade, 
+                       v.preco_unitario, v.total, v.pontos_ganhos
+                FROM vendas v
+                JOIN produtos p ON v.codigo_produto = p.codigo
+                WHERE v.cliente_codigo = ?
+                ORDER BY v.data_venda DESC, v.hora_venda DESC
+            ''', (codigo,))
+            
+            compras = self.db.cursor.fetchall()
+            
+            if not compras:
+                messagebox.showinfo("Histórico", f"Cliente {nome} não possui compras registradas.")
+                return
+            
+            # Criar janela de histórico
+            hist_janela = tk.Toplevel(self.janela)
+            hist_janela.title(f"Histórico de Compras - {nome}")
+            hist_janela.geometry("900x400")
+            
+            # Centralizar
+            hist_janela.update_idletasks()
+            largura = 900
+            altura = 400
+            x = (hist_janela.winfo_screenwidth() // 2) - (largura // 2)
+            y = (hist_janela.winfo_screenheight() // 2) - (altura // 2)
+            hist_janela.geometry(f'{largura}x{altura}+{x}+{y}')
+            
+            # Frame para a tabela
+            frame = tk.Frame(hist_janela, padx=10, pady=10)
+            frame.pack(fill='both', expand=True)
+            
+            # Scrollbars
+            scroll_y = tk.Scrollbar(frame)
+            scroll_y.pack(side='right', fill='y')
+            
+            scroll_x = tk.Scrollbar(frame, orient='horizontal')
+            scroll_x.pack(side='bottom', fill='x')
+            
+            # Treeview
+            colunas = ('Data', 'Venda', 'Produto', 'Qtd', 'Preço Unit.', 'Total', 'Pontos')
+            tree = ttk.Treeview(frame, columns=colunas, show='headings',
+                               yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+            
+            # Configurar colunas
+            tree.heading('Data', text='Data')
+            tree.heading('Venda', text='Venda')
+            tree.heading('Produto', text='Produto')
+            tree.heading('Qtd', text='Qtd')
+            tree.heading('Preço Unit.', text='Preço Unit.')
+            tree.heading('Total', text='Total')
+            tree.heading('Pontos', text='Pontos')
+            
+            tree.column('Data', width=100)
+            tree.column('Venda', width=120)
+            tree.column('Produto', width=250)
+            tree.column('Qtd', width=50)
+            tree.column('Preço Unit.', width=100)
+            tree.column('Total', width=100)
+            tree.column('Pontos', width=80)
+            
+            tree.pack(fill='both', expand=True)
+            
+            scroll_y.config(command=tree.yview)
+            scroll_x.config(command=tree.xview)
+            
+            # Inserir dados
+            total_compras = 0
+            total_pontos = 0
+            
+            for compra in compras:
+                data, venda, produto, qtd, preco, total, pontos = compra
+                tree.insert('', 'end', values=(
+                    data, venda, produto, qtd, f"R$ {preco:.2f}", 
+                    f"R$ {total:.2f}", pontos
+                ))
+                total_compras += total
+                total_pontos += pontos
+            
+            # Frame de resumo
+            frame_resumo = tk.Frame(hist_janela, bg='#f0f0f0', pady=10)
+            frame_resumo.pack(fill='x')
+            
+            tk.Label(frame_resumo, text=f"Total em compras: R$ {total_compras:.2f}", 
+                    font=("Arial", 11, "bold"), bg='#f0f0f0').pack(side='left', padx=20)
+            
+            tk.Label(frame_resumo, text=f"Total de pontos ganhos: {total_pontos}", 
+                    font=("Arial", 11, "bold"), bg='#f0f0f0').pack(side='left', padx=20)
+            
+            btn_fechar = tk.Button(frame_resumo, text="FECHAR", 
+                                   bg="#f44336", fg="white", font=("Arial", 10),
+                                   command=hist_janela.destroy)
+            btn_fechar.pack(side='right', padx=20)
+            
+        except IndexError:
+            messagebox.showwarning("Aviso", "Selecione um cliente para ver o histórico!")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao carregar histórico: {str(e)}")
+    
+    def bloquear_cliente(self):
+        """Bloqueia o cliente selecionado"""
+        try:
+            item = self.tree_clientes.selection()[0]
+            codigo = self.tree_clientes.item(item, 'values')[0]
+            nome = self.tree_clientes.item(item, 'values')[1]
+            
+            # Dialog para motivo
+            motivo_janela = tk.Toplevel(self.janela)
+            motivo_janela.title("Bloquear Cliente")
+            motivo_janela.geometry("400x250")
+            
+            # Centralizar
+            motivo_janela.update_idletasks()
+            largura = 400
+            altura = 250
+            x = (motivo_janela.winfo_screenwidth() // 2) - (largura // 2)
+            y = (motivo_janela.winfo_screenheight() // 2) - (altura // 2)
+            motivo_janela.geometry(f'{largura}x{altura}+{x}+{y}')
+            
+            tk.Label(motivo_janela, text=f"Cliente: {nome}", 
+                    font=("Arial", 11, "bold")).pack(pady=10)
+            
+            tk.Label(motivo_janela, text="Motivo do bloqueio:").pack(pady=5)
+            
+            motivo_entry = tk.Entry(motivo_janela, font=("Arial", 10), width=40)
+            motivo_entry.pack(pady=5)
+            
+            tk.Label(motivo_janela, text="Data de vencimento (opcional):").pack(pady=5)
+            
+            vencimento_entry = tk.Entry(motivo_janela, font=("Arial", 10), width=20)
+            vencimento_entry.pack(pady=5)
+            vencimento_entry.insert(0, "dd/mm/aaaa")
+            
+            def confirmar_bloqueio():
+                motivo = motivo_entry.get().strip()
+                if not motivo:
+                    messagebox.showerror("Erro", "Informe o motivo do bloqueio!")
+                    return
+                
+                vencimento = vencimento_entry.get().strip()
+                if vencimento == "dd/mm/aaaa":
+                    vencimento = ""
+                
+                # Atualizar status do cliente
+                self.db.cursor.execute('''
+                    UPDATE clientes SET status = 'bloqueado' WHERE codigo = ?
+                ''', (codigo,))
+                
+                # Inserir na blacklist
+                data_atual = datetime.now().strftime("%d/%m/%Y")
+                self.db.cursor.execute('''
+                    INSERT INTO blacklist (cliente_codigo, motivo, data_bloqueio, data_vencimento)
+                    VALUES (?, ?, ?, ?)
+                ''', (codigo, motivo, data_atual, vencimento))
+                
+                self.db.conn.commit()
+                
+                messagebox.showinfo("Sucesso", f"Cliente {nome} bloqueado com sucesso!")
+                motivo_janela.destroy()
+                self.carregar_clientes()
+                self.carregar_blacklist()
+            
+            btn_confirmar = tk.Button(motivo_janela, text="BLOQUEAR", bg="#f44336", fg="white",
+                                     font=("Arial", 10, "bold"), command=confirmar_bloqueio)
+            btn_confirmar.pack(pady=20)
+            
+        except IndexError:
+            messagebox.showwarning("Aviso", "Selecione um cliente para bloquear!")
+    
+    def desbloquear_cliente(self):
+        """Desbloqueia o cliente selecionado na blacklist"""
+        try:
+            item = self.tree_blacklist.selection()[0]
+            codigo = self.tree_blacklist.item(item, 'values')[0]
+            nome = self.tree_blacklist.item(item, 'values')[1]
+            
+            if messagebox.askyesno("Confirmar", f"Deseja desbloquear o cliente {nome}?"):
+                # Atualizar status do cliente
+                self.db.cursor.execute('''
+                    UPDATE clientes SET status = 'ativo' WHERE codigo = ?
+                ''', (codigo,))
+                
+                # Remover da blacklist
+                self.db.cursor.execute('''
+                    DELETE FROM blacklist WHERE cliente_codigo = ?
+                ''', (codigo,))
+                
+                self.db.conn.commit()
+                
+                messagebox.showinfo("Sucesso", f"Cliente {nome} desbloqueado!")
+                self.carregar_clientes()
+                self.carregar_blacklist()
+            
+        except IndexError:
+            messagebox.showwarning("Aviso", "Selecione um cliente na blacklist para desbloquear!")
+    
+    def voltar(self):
+        """Volta para o menu principal"""
+        self.db.fechar_conexao()
+        self.janela.destroy()
+        self.menu_principal.deiconify()

@@ -1,4 +1,8 @@
 from datetime import datetime
+from random import random
+import string
+import random
+import string
 
 class Produto:
     def __init__(self, nome, categoria, tamanho, cor, quantidade, preco_venda, 
@@ -23,12 +27,11 @@ class Produto:
         return f"PROD{count:04d}"
     
     def gerar_codigo_barras(self):
-        """Gera um código de barras fictício (EAN-13 simulado)"""
-        import random
-        # Simula um código EAN-13 (8 dígitos + 5 aleatórios)
-        prefixo = "789"  # Código do Brasil
-        resto = ''.join([str(random.randint(0, 9)) for _ in range(9)])
-        return prefixo + resto
+        """Gera um código de barras fictício (apenas números)"""
+        # Gerar código apenas com números (código de barras tradicional)
+        caracteres = string.digits
+        codigo = ''.join(random.choice(caracteres) for _ in range(13))
+        return codigo
 
 class Venda:
     def __init__(self, codigo_produto, quantidade, preco_unitario, numero_nota=""):

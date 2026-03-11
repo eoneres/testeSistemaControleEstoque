@@ -1,5 +1,3 @@
-# main.py - Arquivo principal do sistema
-
 from login import TelaLogin
 
 if __name__ == "__main__":

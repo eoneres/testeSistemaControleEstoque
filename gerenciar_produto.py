@@ -187,7 +187,7 @@ class TelaGerenciarProduto:
         
         for col in colunas:
             self.tree_historico.heading(col, text=col)
-            self.tree_historico.column(col, width=80)
+            self.tree_historico.column(col, width=90)
         
         self.tree_historico.pack(fill='both', expand=True)
         
@@ -205,21 +205,41 @@ class TelaGerenciarProduto:
         produto = self.db.cursor.fetchone()
         
         if produto:
-            # Limpar entradas existentes
+            
+            print("="*50)
+            print("DADOS DO PRODUTO CARREGADO:")
+            print(f"Índice 0: id = {produto[0]}")
+            print(f"Índice 1: codigo = {produto[1]}")
+            print(f"Índice 2: codigo_barras = {produto[2]}")
+            print(f"Índice 3: nome = {produto[3]}")
+            print(f"Índice 4: categoria = {produto[4]}")
+            print(f"Índice 5: tamanho = {produto[5]}")
+            print(f"Índice 6: cor = {produto[6]}")
+            print(f"Índice 7: quantidade = {produto[7]}")
+            print(f"Índice 8: quantidade_minima = {produto[8]}")
+            print(f"Índice 9: preco_venda = {produto[9]}")
+            print(f"Índice 10: preco_custo = {produto[10]}")
+            print(f"Índice 11: fornecedor = {produto[11]}")
+            print(f"Índice 12: localizacao = {produto[12]}")
+            print(f"Índice 13: data_cadastro = {produto[13]}")
+            print(f"Índice 14: data_atualizacao = {produto[14]}")
+            print("="*50)
+            
+            
             for entry in self.entries.values():
                 if isinstance(entry, tk.Entry):
                     entry.delete(0, tk.END)
                 elif isinstance(entry, ttk.Combobox):
                     entry.set('')
             
-            # Inserir novos valores
+            
             self.entries["codigo_barras"].insert(0, produto[2] or "")
             self.entries["nome"].insert(0, produto[3])
             self.entries["categoria"].set(produto[4])
             self.entries["tamanho"].set(produto[5])
             self.entries["cor"].insert(0, produto[6])
             self.entries["quantidade"].insert(0, str(produto[7]))
-            self.entries["quantidade_minima"].insert(0, str(produto[8]))
+            self.entries["quantidade_minima"].insert(0, str(produto[8] or 5))
             self.entries["preco_venda"].insert(0, str(produto[9]))
             self.entries["preco_custo"].insert(0, str(produto[10] or ""))
             self.entries["fornecedor"].insert(0, produto[11])
@@ -265,7 +285,7 @@ class TelaGerenciarProduto:
             fornecedor = self.entries["fornecedor"].get().strip()
             localizacao = self.entries["localizacao"].get().strip()
             
-            # VALIDAÇÃO DETALHADA - Campo por campo
+            
             campos_obrigatorios = {
                 "Nome do Produto": nome,
                 "Categoria": categoria,
@@ -276,7 +296,7 @@ class TelaGerenciarProduto:
                 "Fornecedor": fornecedor
             }
             
-            # Verificar campos obrigatórios vazios
+            
             campos_vazios = []
             for nome_campo, valor in campos_obrigatorios.items():
                 if not valor:
@@ -288,7 +308,7 @@ class TelaGerenciarProduto:
                                    "\n".join(f"• {campo}" for campo in campos_vazios))
                 return
             
-            # VALIDAÇÃO DE QUANTIDADE
+            
             try:
                 if not quantidade:
                     messagebox.showerror("Erro", "O campo Quantidade não pode estar vazio!")
@@ -303,7 +323,7 @@ class TelaGerenciarProduto:
                                    f"Valor fornecido: '{quantidade}'")
                 return
             
-            # VALIDAÇÃO DE QUANTIDADE MÍNIMA
+            
             try:
                 if quantidade_minima:
                     quantidade_minima = int(quantidade_minima)
@@ -318,12 +338,12 @@ class TelaGerenciarProduto:
                                    f"Valor fornecido: '{quantidade_minima}'")
                 return
             
-            # VALIDAÇÃO DE PREÇO DE VENDA
+            
             try:
                 if not preco_venda:
                     messagebox.showerror("Erro", "O campo Preço de Venda não pode estar vazio!")
                     return
-                # Substituir vírgula por ponto e remover espaços
+                
                 preco_venda = preco_venda.replace(',', '.').strip()
                 preco_venda = float(preco_venda)
                 if preco_venda <= 0:
@@ -336,7 +356,7 @@ class TelaGerenciarProduto:
                                    f"Valor fornecido: '{preco_venda}'")
                 return
             
-            # VALIDAÇÃO DE PREÇO DE CUSTO (opcional)
+            
             try:
                 if preco_custo:
                     preco_custo = preco_custo.replace(',', '.').strip()
@@ -353,16 +373,24 @@ class TelaGerenciarProduto:
                                    f"Valor fornecido: '{preco_custo}'")
                 return
             
-            # Se chegou até aqui, todos os campos estão válidos
-            from datetime import datetime
+            
             data_atualizacao = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             
             if self.codigo_produto:  # UPDATE
                 self.db.cursor.execute('''
                     UPDATE produtos SET
-                        codigo_barras = ?, nome = ?, categoria = ?, tamanho = ?, cor = ?,
-                        quantidade = ?, quantidade_minima = ?, preco_custo = ?, 
-                        preco_venda = ?, fornecedor = ?, localizacao = ?, data_atualizacao = ?
+                        codigo_barras = ?,
+                        nome = ?,
+                        categoria = ?,
+                        tamanho = ?,
+                        cor = ?,
+                        quantidade = ?,
+                        quantidade_minima = ?,
+                        preco_custo = ?,
+                        preco_venda = ?,
+                        fornecedor = ?,
+                        localizacao = ?,
+                        data_atualizacao = ?
                     WHERE codigo = ?
                 ''', (codigo_barras, nome, categoria, tamanho, cor, quantidade, 
                       quantidade_minima, preco_custo, preco_venda, fornecedor, 
@@ -377,7 +405,9 @@ class TelaGerenciarProduto:
                 codigo = produto.gerar_codigo(self.db)
                 
                 if not codigo_barras:
-                    codigo_barras = produto.gerar_codigo_barras()
+                    # Gerar código de barras automático (APENAS NÚMEROS)
+                    import random
+                    codigo_barras = ''.join([str(random.randint(0, 9)) for _ in range(13)])
                 
                 self.db.cursor.execute('''
                     INSERT INTO produtos 
