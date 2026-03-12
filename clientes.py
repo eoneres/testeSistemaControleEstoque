@@ -8,13 +8,20 @@ class TelaClientes:
         self.menu_principal = menu_principal
         self.db = Database()
         self.janela = tk.Toplevel()
-        self.janela.title("Sistema de Estoque - Gerenciar Clientes")
-        self.janela.geometry("1000x700")
+        self.janela.title("StockMaster - Gerenciar Clientes")
+        self.janela.geometry("1100x700")
         self.janela.resizable(False, False)
+        self.janela.configure(bg='#ff751f')
+        
+        # Cores como atributos da classe
+        self.cor_primaria = '#ff751f'
+        self.cor_botao = '#ffffff'
+        self.cor_texto_botao = '#ff751f'
+        self.cor_sombra = '#e65c00'
         
         # Centralizar
         self.janela.update_idletasks()
-        largura = 1000
+        largura = 1100
         altura = 700
         x = (self.janela.winfo_screenwidth() // 2) - (largura // 2)
         y = (self.janela.winfo_screenheight() // 2) - (altura // 2)
@@ -33,53 +40,123 @@ class TelaClientes:
         self.janela.mainloop()
     
     def criar_interface(self):
+        # Frame branco principal
+        frame_conteudo = tk.Frame(self.janela, bg='white', bd=0)
+        frame_conteudo.pack(expand=True, fill='both', padx=20, pady=20)
+        
+        # Título
+        titulo = tk.Label(
+            frame_conteudo,
+            text="👥 GERENCIAR CLIENTES",
+            font=("Arial", 20, "bold"),
+            fg=self.cor_primaria,
+            bg='white'
+        )
+        titulo.pack(pady=20)
+        
         # Notebook (abas)
-        notebook = ttk.Notebook(self.janela)
-        notebook.pack(fill='both', expand=True, padx=10, pady=10)
+        self.notebook = ttk.Notebook(frame_conteudo)
+        self.notebook.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Estilo do Notebook
+        style = ttk.Style()
+        style.theme_use('default')
+        style.configure('TNotebook', background='white')
+        style.configure('TNotebook.Tab', background='#f0f0f0', padding=[10, 5], font=('Arial', 10))
+        style.map('TNotebook.Tab', background=[('selected', self.cor_primaria)], 
+                  foreground=[('selected', 'white')])
         
         # ABA 1: Lista de Clientes
-        frame_lista = ttk.Frame(notebook)
-        notebook.add(frame_lista, text="📋 Lista de Clientes")
+        frame_lista = ttk.Frame(self.notebook)
+        self.notebook.add(frame_lista, text="📋 Lista de Clientes")
         self.criar_aba_lista(frame_lista)
         
         # ABA 2: Cadastro de Cliente
-        frame_cadastro = ttk.Frame(notebook)
-        notebook.add(frame_cadastro, text="➕ Novo Cliente")
+        frame_cadastro = ttk.Frame(self.notebook)
+        self.notebook.add(frame_cadastro, text="➕ Novo Cliente")
         self.criar_aba_cadastro(frame_cadastro)
         
         # ABA 3: Blacklist
-        frame_blacklist = ttk.Frame(notebook)
-        notebook.add(frame_blacklist, text="🚫 Blacklist")
+        frame_blacklist = ttk.Frame(self.notebook)
+        self.notebook.add(frame_blacklist, text="🚫 Blacklist")
         self.criar_aba_blacklist(frame_blacklist)
     
     def criar_aba_lista(self, parent):
+        # Cores
+        cor_primaria = self.cor_primaria
+        cor_botao = self.cor_botao
+        cor_texto_botao = self.cor_texto_botao
+        
         # Frame de busca
-        frame_busca = tk.Frame(parent, bg='#f0f0f0', padx=10, pady=10)
-        frame_busca.pack(fill='x')
+        frame_busca = tk.Frame(parent, bg='#f8f8f8', padx=10, pady=10)
+        frame_busca.pack(fill='x', padx=10, pady=10)
         
-        tk.Label(frame_busca, text="Buscar:", bg='#f0f0f0', font=("Arial", 10)).pack(side='left', padx=5)
+        tk.Label(
+            frame_busca,
+            text="🔍 Buscar:",
+            font=("Arial", 10),
+            bg='#f8f8f8',
+            fg='#333333'
+        ).pack(side='left', padx=(0, 10))
         
-        self.busca_entry = tk.Entry(frame_busca, font=("Arial", 10), width=30)
-        self.busca_entry.pack(side='left', padx=5)
+        self.busca_entry = tk.Entry(
+            frame_busca,
+            font=("Arial", 10),
+            width=25,
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.busca_entry.pack(side='left', padx=(0, 10), ipady=3)
         
         self.filtro_var = tk.StringVar(value="nome")
         filtros = [("Nome", "nome"), ("CPF", "cpf"), ("Telefone", "telefone")]
         
         for texto, valor in filtros:
-            rb = tk.Radiobutton(frame_busca, text=texto, variable=self.filtro_var, 
-                              value=valor, bg='#f0f0f0', font=("Arial", 9))
+            rb = tk.Radiobutton(
+                frame_busca,
+                text=texto,
+                variable=self.filtro_var,
+                value=valor,
+                bg='#f8f8f8',
+                fg='#333333',
+                font=("Arial", 9),
+                cursor='hand2'
+            )
             rb.pack(side='left', padx=5)
         
-        btn_buscar = tk.Button(frame_busca, text="🔍 BUSCAR", bg="#2196F3", fg="white",
-                              font=("Arial", 9, "bold"), command=self.buscar_clientes)
+        btn_buscar = tk.Button(
+            frame_busca,
+            text="🔍 BUSCAR",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 9, "bold"),
+            bd=1,
+            relief='solid',
+            padx=10,
+            pady=3,
+            cursor='hand2',
+            command=self.buscar_clientes
+        )
         btn_buscar.pack(side='left', padx=5)
         
-        btn_limpar = tk.Button(frame_busca, text="LIMPAR", bg="#FF9800", fg="white",
-                              font=("Arial", 9, "bold"), command=self.limpar_busca)
+        btn_limpar = tk.Button(
+            frame_busca,
+            text="✖ LIMPAR",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 9, "bold"),
+            bd=1,
+            relief='solid',
+            padx=10,
+            pady=3,
+            cursor='hand2',
+            command=self.limpar_busca
+        )
         btn_limpar.pack(side='left', padx=5)
         
         # Frame da tabela
-        frame_tabela = tk.Frame(parent)
+        frame_tabela = tk.Frame(parent, bg='white')
         frame_tabela.pack(fill='both', expand=True, padx=10, pady=10)
         
         # Scrollbars
@@ -91,8 +168,14 @@ class TelaClientes:
         
         # Treeview
         colunas = ('Código', 'Nome', 'CPF', 'Telefone', 'Cidade', 'Pontos', 'Status')
-        self.tree_clientes = ttk.Treeview(frame_tabela, columns=colunas, show='headings',
-                                         yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        self.tree_clientes = ttk.Treeview(
+            frame_tabela,
+            columns=colunas,
+            show='headings',
+            yscrollcommand=scroll_y.set,
+            xscrollcommand=scroll_x.set,
+            height=15
+        )
         
         # Configurar colunas
         larguras = [100, 250, 150, 120, 150, 80, 100]
@@ -106,41 +189,56 @@ class TelaClientes:
         scroll_x.config(command=self.tree_clientes.xview)
         
         # Tags para cores
-        self.tree_clientes.tag_configure('bloqueado', background='#ffcdd2')
+        self.tree_clientes.tag_configure('bloqueado', background='#ffe5e5')
         self.tree_clientes.tag_configure('inativo', background='#fff3e0')
         
         # Bind para duplo clique (ver detalhes)
         self.tree_clientes.bind('<Double-1>', self.ver_detalhes_cliente)
         
         # Frame de botões
-        frame_botoes = tk.Frame(parent, pady=10)
-        frame_botoes.pack()
+        frame_botoes = tk.Frame(parent, bg='white', pady=10)
+        frame_botoes.pack(fill='x')
         
-        btn_novo = tk.Button(frame_botoes, text="➕ NOVO CLIENTE", bg="#4CAF50", fg="white",
-                            font=("Arial", 10, "bold"), padx=20, command=self.novo_cliente)
-        btn_novo.pack(side='left', padx=5)
+        botoes = [
+            ("➕ NOVO CLIENTE", self.novo_cliente),
+            ("📋 VER DETALHES", self.ver_detalhes),
+            ("✏️ EDITAR", self.editar_cliente),
+            ("📊 HISTÓRICO", self.ver_historico_compras),
+            ("🚫 BLOQUEAR", self.bloquear_cliente)
+        ]
         
-        btn_detalhes = tk.Button(frame_botoes, text="📋 VER DETALHES", bg="#2196F3", fg="white",
-                                font=("Arial", 10, "bold"), padx=20, command=self.ver_detalhes)
-        btn_detalhes.pack(side='left', padx=5)
-        
-        btn_editar = tk.Button(frame_botoes, text="✏️ EDITAR", bg="#FF9800", fg="white",
-                              font=("Arial", 10, "bold"), padx=20, command=self.editar_cliente)
-        btn_editar.pack(side='left', padx=5)
-        
-        btn_historico = tk.Button(frame_botoes, text="📊 HISTÓRICO", bg="#9C27B0", fg="white",
-                                 font=("Arial", 10, "bold"), padx=20, command=self.ver_historico_compras)
-        btn_historico.pack(side='left', padx=5)
-        
-        btn_bloquear = tk.Button(frame_botoes, text="🚫 BLOQUEAR", bg="#f44336", fg="white",
-                                font=("Arial", 10, "bold"), padx=20, command=self.bloquear_cliente)
-        btn_bloquear.pack(side='left', padx=5)
+        for texto, comando in botoes:
+            btn = tk.Button(
+                frame_botoes,
+                text=texto,
+                font=("Arial", 10, "bold"),
+                bg=cor_botao,
+                fg=cor_texto_botao,
+                bd=1,
+                relief='solid',
+                padx=15,
+                pady=5,
+                cursor='hand2',
+                command=comando
+            )
+            btn.pack(side='left', padx=5, expand=True, fill='x')
+            
+            def on_enter(e, b=btn):
+                b['bg'] = '#f5f5f5'
+                b['fg'] = self.cor_sombra
+            
+            def on_leave(e, b=btn):
+                b['bg'] = cor_botao
+                b['fg'] = cor_texto_botao
+            
+            btn.bind('<Enter>', on_enter)
+            btn.bind('<Leave>', on_leave)
     
     def criar_aba_cadastro(self, parent):
         # Canvas com scroll
-        canvas = tk.Canvas(parent)
+        canvas = tk.Canvas(parent, bg='white', highlightthickness=0)
         scrollbar = tk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas)
+        scrollable_frame = tk.Frame(canvas, bg='white')
         
         scrollable_frame.bind(
             "<Configure>",
@@ -150,13 +248,27 @@ class TelaClientes:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        frame = tk.Frame(scrollable_frame, padx=30, pady=20)
+        frame = tk.Frame(scrollable_frame, bg='white', padx=30, pady=20)
         frame.pack(expand=True, fill='both')
         
-        # Título (CRIANDO O ATRIBUTO self.titulo_cadastro)
-        self.titulo_cadastro = tk.Label(frame, text="CADASTRO DE CLIENTE", 
-                                        font=("Arial", 16, "bold"), fg="#333")
+        # Título do cadastro
+        self.titulo_cadastro = tk.Label(
+            frame,
+            text="CADASTRO DE CLIENTE",
+            font=("Arial", 16, "bold"),
+            fg=self.cor_primaria,
+            bg='white'
+        )
         self.titulo_cadastro.pack(pady=20)
+        
+        # Subtítulo
+        tk.Label(
+            frame,
+            text="Preencha os dados do cliente (* campos obrigatórios)",
+            font=("Arial", 10, "italic"),
+            fg='#666666',
+            bg='white'
+        ).pack(pady=(0, 20))
         
         # Criar um notebook interno para organizar
         interno_notebook = ttk.Notebook(frame)
@@ -178,149 +290,391 @@ class TelaClientes:
         self.criar_observacoes(frame_obs)
         
         # Frame para botões
-        frame_botoes = tk.Frame(frame, bg='#f0f0f0', pady=20)
-        frame_botoes.pack(fill='x', pady=20)
+        frame_botoes = tk.Frame(frame, bg='white', pady=20)
+        frame_botoes.pack(fill='x')
         
-        # Botão Salvar (CRIANDO O ATRIBUTO self.btn_salvar)
-        self.btn_salvar = tk.Button(frame_botoes, text="💾 SALVAR CLIENTE", 
-                                   bg="#4CAF50", fg="white", font=("Arial", 12, "bold"),
-                                   padx=30, pady=10, command=self.salvar_cliente)
-        self.btn_salvar.pack(side='left', padx=10, expand=True)
+        self.btn_salvar = tk.Button(
+            frame_botoes,
+            text="💾 SALVAR CLIENTE",
+            font=("Arial", 12, "bold"),
+            bg=self.cor_botao,
+            fg=self.cor_texto_botao,
+            bd=1,
+            relief='solid',
+            padx=30,
+            pady=10,
+            cursor='hand2',
+            command=self.salvar_cliente
+        )
+        self.btn_salvar.pack(side='left', padx=5, expand=True, fill='x')
         
-        btn_limpar = tk.Button(frame_botoes, text="🔄 LIMPAR", 
-                               bg="#FF9800", fg="white", font=("Arial", 12, "bold"),
-                               padx=30, pady=10, command=self.limpar_cadastro)
-        btn_limpar.pack(side='left', padx=10, expand=True)
+        btn_limpar = tk.Button(
+            frame_botoes,
+            text="🔄 LIMPAR",
+            font=("Arial", 12, "bold"),
+            bg=self.cor_botao,
+            fg=self.cor_texto_botao,
+            bd=1,
+            relief='solid',
+            padx=30,
+            pady=10,
+            cursor='hand2',
+            command=self.limpar_cadastro
+        )
+        btn_limpar.pack(side='left', padx=5, expand=True, fill='x')
         
-        btn_cancelar = tk.Button(frame_botoes, text="↩️ CANCELAR", 
-                                bg="#f44336", fg="white", font=("Arial", 12, "bold"),
-                                padx=30, pady=10, command=self.cancelar_edicao)
-        btn_cancelar.pack(side='left', padx=10, expand=True)
+        btn_cancelar = tk.Button(
+            frame_botoes,
+            text="↩️ CANCELAR",
+            font=("Arial", 12, "bold"),
+            bg=self.cor_botao,
+            fg=self.cor_texto_botao,
+            bd=1,
+            relief='solid',
+            padx=30,
+            pady=10,
+            cursor='hand2',
+            command=self.cancelar_edicao
+        )
+        btn_cancelar.pack(side='left', padx=5, expand=True, fill='x')
+        
+        # Efeito hover nos botões
+        for btn in [self.btn_salvar, btn_limpar, btn_cancelar]:
+            def on_enter(e, b=btn):
+                b['bg'] = '#f5f5f5'
+                b['fg'] = self.cor_sombra
+            
+            def on_leave(e, b=btn):
+                b['bg'] = self.cor_botao
+                b['fg'] = self.cor_texto_botao
+            
+            btn.bind('<Enter>', on_enter)
+            btn.bind('<Leave>', on_leave)
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
     
     def criar_dados_pessoais(self, parent):
-        frame = tk.Frame(parent, padx=20, pady=20)
+        frame = tk.Frame(parent, bg='white', padx=20, pady=20)
         frame.pack(fill='both', expand=True)
-    
-        # Configurar grid com 3 colunas de tamanhos iguais
+        
+        # Configurar grid
         for i in range(3):
-            frame.columnconfigure(i, weight=1, uniform="col")
-    
-        # Linha 0: Nome Completo (ocupa 2 colunas) e CPF (1 coluna)
-        tk.Label(frame, text="Nome Completo:*", font=("Arial", 10, "bold")).grid(
-            row=0, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["nome"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["nome"].grid(row=1, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="CPF:*", font=("Arial", 10, "bold")).grid(
-            row=0, column=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["cpf"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["cpf"].grid(row=1, column=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
+            frame.columnconfigure(i, weight=1)
+        
+        # Linha 0: Nome Completo
+        tk.Label(
+            frame,
+            text="Nome Completo:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=0, column=0, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["nome"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["nome"].grid(row=1, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # CPF
+        tk.Label(
+            frame,
+            text="CPF:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=0, column=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["cpf"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["cpf"].grid(row=1, column=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
         # Linha 2: RG
-        tk.Label(frame, text="RG:", font=("Arial", 10, "bold")).grid(
-            row=2, column=0, sticky='w', padx=5, pady=(10,0))
-        self.entries["rg"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["rg"].grid(row=3, column=0, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        # Linha 2-3: Data Nascimento e Sexo
-        tk.Label(frame, text="Data Nascimento:", font=("Arial", 10, "bold")).grid(
-            row=2, column=1, sticky='w', padx=5, pady=(10,0))
-        self.entries["data_nascimento"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["data_nascimento"].grid(row=3, column=1, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="Sexo:", font=("Arial", 10, "bold")).grid(
-            row=2, column=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["sexo"] = ttk.Combobox(frame, values=["Masculino", "Feminino", "Outro"], 
-                                        state='readonly', font=("Arial", 10))
-        self.entries["sexo"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
+        tk.Label(
+            frame,
+            text="RG:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=2, column=0, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["rg"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["rg"].grid(row=3, column=0, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Data Nascimento
+        tk.Label(
+            frame,
+            text="Data Nascimento:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=2, column=1, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["data_nascimento"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["data_nascimento"].grid(row=3, column=1, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Sexo
+        tk.Label(
+            frame,
+            text="Sexo:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=2, column=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["sexo"] = ttk.Combobox(
+            frame,
+            values=["Masculino", "Feminino", "Outro"],
+            state='readonly',
+            font=("Arial", 10)
+        )
+        self.entries["sexo"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
         # Linha 4: E-mail
-        tk.Label(frame, text="E-mail:", font=("Arial", 10, "bold")).grid(
-            row=4, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["email"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["email"].grid(row=5, column=0, columnspan=3, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        # Linha 6: Telefone Fixo e Celular
-        tk.Label(frame, text="Telefone Fixo:*", font=("Arial", 10, "bold")).grid(
-            row=6, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["telefone"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["telefone"].grid(row=7, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="Celular:", font=("Arial", 10, "bold")).grid(
-            row=6, column=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["celular"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["celular"].grid(row=7, column=2, sticky='ew', padx=5, pady=5, ipady=3)
+        tk.Label(
+            frame,
+            text="E-mail:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=4, column=0, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["email"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["email"].grid(row=5, column=0, columnspan=3, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Linha 6: Telefone Fixo
+        tk.Label(
+            frame,
+            text="Telefone Fixo:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=6, column=0, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["telefone"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["telefone"].grid(row=7, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Celular
+        tk.Label(
+            frame,
+            text="Celular:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=6, column=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["celular"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["celular"].grid(row=7, column=2, sticky='ew', padx=5, pady=5, ipady=5)
     
     def criar_endereco(self, parent):
-        frame = tk.Frame(parent, padx=20, pady=20)
+        frame = tk.Frame(parent, bg='white', padx=20, pady=20)
         frame.pack(fill='both', expand=True)
-    
-        # Configurar grid com 4 colunas para melhor organização
+        
+        # Configurar grid
         for i in range(4):
-            frame.columnconfigure(i, weight=1, uniform="col")
-    
-        # Linha 0: CEP e Endereço
-        tk.Label(frame, text="CEP:", font=("Arial", 10, "bold")).grid(
-            row=0, column=0, sticky='w', padx=5, pady=(10,0))
-        self.entries["cep"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["cep"].grid(row=1, column=0, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="Endereço:*", font=("Arial", 10, "bold")).grid(
-            row=0, column=1, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["endereco"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["endereco"].grid(row=1, column=1, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="Número:", font=("Arial", 10, "bold")).grid(
-            row=0, column=3, sticky='w', padx=5, pady=(10,0))
-        self.entries["numero"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1, width=10)
-        self.entries["numero"].grid(row=1, column=3, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        # Linha 2: Complemento e Bairro
-        tk.Label(frame, text="Complemento:", font=("Arial", 10, "bold")).grid(
-            row=2, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["complemento"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["complemento"].grid(row=3, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="Bairro:*", font=("Arial", 10, "bold")).grid(
-            row=2, column=2, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["bairro"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["bairro"].grid(row=3, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        # Linha 4: Cidade e Estado
-        tk.Label(frame, text="Cidade:*", font=("Arial", 10, "bold")).grid(
-            row=4, column=0, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["cidade"] = tk.Entry(frame, font=("Arial", 10), relief='solid', bd=1)
-        self.entries["cidade"].grid(row=5, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
-    
-        tk.Label(frame, text="Estado:*", font=("Arial", 10, "bold")).grid(
-            row=4, column=2, columnspan=2, sticky='w', padx=5, pady=(10,0))
-        self.entries["estado"] = ttk.Combobox(frame, 
-                                         values=["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
-                                                 "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
-                                                 "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"],
-                                         state='readonly', font=("Arial", 10))
-        self.entries["estado"].grid(row=5, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=3)
+            frame.columnconfigure(i, weight=1)
+        
+        # Linha 0: CEP
+        tk.Label(
+            frame,
+            text="CEP:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=0, column=0, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["cep"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["cep"].grid(row=1, column=0, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Endereço
+        tk.Label(
+            frame,
+            text="Endereço:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=0, column=1, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["endereco"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["endereco"].grid(row=1, column=1, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Número
+        tk.Label(
+            frame,
+            text="Número:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=0, column=3, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["numero"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd',
+            width=10
+        )
+        self.entries["numero"].grid(row=1, column=3, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Linha 2: Complemento
+        tk.Label(
+            frame,
+            text="Complemento:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["complemento"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["complemento"].grid(row=3, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Bairro
+        tk.Label(
+            frame,
+            text="Bairro:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=2, column=2, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["bairro"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["bairro"].grid(row=3, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Linha 4: Cidade
+        tk.Label(
+            frame,
+            text="Cidade:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=4, column=0, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["cidade"] = tk.Entry(
+            frame,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.entries["cidade"].grid(row=5, column=0, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
+        
+        # Estado
+        tk.Label(
+            frame,
+            text="Estado:*",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).grid(row=4, column=2, columnspan=2, sticky='w', padx=5, pady=(10, 2))
+        
+        self.entries["estado"] = ttk.Combobox(
+            frame,
+            values=["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+                    "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+                    "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"],
+            state='readonly',
+            font=("Arial", 10)
+        )
+        self.entries["estado"].grid(row=5, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
     
     def criar_observacoes(self, parent):
-        frame = tk.Frame(parent, padx=20, pady=20)
+        frame = tk.Frame(parent, bg='white', padx=20, pady=20)
         frame.pack(fill='both', expand=True)
         
-        tk.Label(frame, text="Observações:", font=("Arial", 10, "bold")).pack(anchor='w')
+        tk.Label(
+            frame,
+            text="Observações:",
+            font=("Arial", 10, "bold"),
+            fg='#333333',
+            bg='white'
+        ).pack(anchor='w')
         
-        self.entries["observacoes"] = tk.Text(frame, height=8, width=60, 
-                                              font=("Arial", 10), relief='solid', bd=1)
+        self.entries["observacoes"] = tk.Text(
+            frame,
+            height=8,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
         self.entries["observacoes"].pack(fill='both', expand=True, pady=10)
     
     def criar_aba_blacklist(self, parent):
-        frame = tk.Frame(parent, padx=10, pady=10)
+        frame = tk.Frame(parent, bg='white', padx=10, pady=10)
         frame.pack(fill='both', expand=True)
         
         # Treeview para blacklist
         colunas = ('Código', 'Nome', 'CPF', 'Motivo', 'Data Bloqueio', 'Vencimento')
-        self.tree_blacklist = ttk.Treeview(frame, columns=colunas, show='headings', height=15)
+        self.tree_blacklist = ttk.Treeview(
+            frame,
+            columns=colunas,
+            show='headings',
+            height=15
+        )
         
         for col in colunas:
             self.tree_blacklist.heading(col, text=col)
@@ -340,12 +694,34 @@ class TelaClientes:
         self.tree_blacklist.configure(yscrollcommand=scrollbar.set)
         
         # Frame de botões
-        frame_botoes = tk.Frame(frame, pady=10)
-        frame_botoes.pack()
+        frame_botoes = tk.Frame(frame, bg='white', pady=10)
+        frame_botoes.pack(fill='x')
         
-        btn_desbloquear = tk.Button(frame_botoes, text="🔓 DESBLOQUEAR", bg="#4CAF50", fg="white",
-                                   font=("Arial", 10, "bold"), padx=20, command=self.desbloquear_cliente)
-        btn_desbloquear.pack(side='left', padx=5)
+        btn_desbloquear = tk.Button(
+            frame_botoes,
+            text="🔓 DESBLOQUEAR SELECIONADO",
+            font=("Arial", 10, "bold"),
+            bg=self.cor_botao,
+            fg=self.cor_texto_botao,
+            bd=1,
+            relief='solid',
+            padx=20,
+            pady=8,
+            cursor='hand2',
+            command=self.desbloquear_cliente
+        )
+        btn_desbloquear.pack(pady=5)
+        
+        def on_enter(e):
+            btn_desbloquear['bg'] = '#f5f5f5'
+            btn_desbloquear['fg'] = self.cor_sombra
+        
+        def on_leave(e):
+            btn_desbloquear['bg'] = self.cor_botao
+            btn_desbloquear['fg'] = self.cor_texto_botao
+        
+        btn_desbloquear.bind('<Enter>', on_enter)
+        btn_desbloquear.bind('<Leave>', on_leave)
     
     def carregar_clientes(self):
         """Carrega lista de clientes"""
@@ -449,9 +825,7 @@ class TelaClientes:
         self.limpar_cadastro()
         self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
         self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
-        
-        notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
-        notebook.select(1)
+        self.notebook.select(1)
     
     def editar_cliente(self):
         """Editar cliente selecionado"""
@@ -492,8 +866,7 @@ class TelaClientes:
                 self.btn_salvar.config(text="💾 ATUALIZAR CLIENTE", command=self.atualizar_cliente)
                 
                 # Ir para aba de edição
-                notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
-                notebook.select(1)
+                self.notebook.select(1)
                 
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um cliente para editar!")
@@ -504,9 +877,7 @@ class TelaClientes:
         self.limpar_cadastro()
         self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
         self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
-        
-        notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
-        notebook.select(0)
+        self.notebook.select(0)
     
     def limpar_cadastro(self):
         """Limpa todos os campos do cadastro"""
@@ -597,8 +968,7 @@ class TelaClientes:
             self.carregar_blacklist()
             
             # Voltar para aba de lista
-            notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
-            notebook.select(0)
+            self.notebook.select(0)
             
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao cadastrar cliente: {str(e)}")
@@ -677,9 +1047,7 @@ class TelaClientes:
             # Resetar formulário e voltar para lista
             self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
             self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
-            
-            notebook = self.janela.nametowidget(self.janela.winfo_children()[0])
-            notebook.select(0)
+            self.notebook.select(0)
             
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao atualizar cliente: {str(e)}")
@@ -734,6 +1102,7 @@ class TelaClientes:
                 detalhes_janela = tk.Toplevel(self.janela)
                 detalhes_janela.title("Detalhes do Cliente")
                 detalhes_janela.geometry("600x500")
+                detalhes_janela.configure(bg='white')
                 
                 # Centralizar
                 detalhes_janela.update_idletasks()
@@ -744,21 +1113,48 @@ class TelaClientes:
                 detalhes_janela.geometry(f'{largura}x{altura}+{x}+{y}')
                 
                 # Área de texto
-                texto = tk.Text(detalhes_janela, font=("Courier", 10), padx=20, pady=20)
-                texto.pack(fill='both', expand=True)
+                texto = tk.Text(
+                    detalhes_janela,
+                    font=("Courier", 10),
+                    padx=20,
+                    pady=20,
+                    bg='#f9f9f9',
+                    relief='solid',
+                    bd=1
+                )
+                texto.pack(fill='both', expand=True, padx=10, pady=10)
                 texto.insert('1.0', detalhes)
                 texto.config(state='disabled')
                 
                 # Botão fechar
-                btn_fechar = tk.Button(detalhes_janela, text="FECHAR", 
-                                       bg="#f44336", fg="white", font=("Arial", 10, "bold"),
-                                       command=detalhes_janela.destroy)
+                btn_fechar = tk.Button(
+                    detalhes_janela,
+                    text="FECHAR",
+                    font=("Arial", 10, "bold"),
+                    bg=self.cor_botao,
+                    fg=self.cor_texto_botao,
+                    bd=1,
+                    relief='solid',
+                    padx=20,
+                    pady=8,
+                    cursor='hand2',
+                    command=detalhes_janela.destroy
+                )
                 btn_fechar.pack(pady=10)
+                
+                def on_enter(e):
+                    btn_fechar['bg'] = '#f5f5f5'
+                    btn_fechar['fg'] = self.cor_sombra
+                
+                def on_leave(e):
+                    btn_fechar['bg'] = self.cor_botao
+                    btn_fechar['fg'] = self.cor_texto_botao
+                
+                btn_fechar.bind('<Enter>', on_enter)
+                btn_fechar.bind('<Leave>', on_leave)
                 
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um cliente para ver detalhes!")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao carregar detalhes: {str(e)}")
     
     def ver_historico_compras(self):
         """Ver histórico de compras do cliente selecionado"""
@@ -769,7 +1165,7 @@ class TelaClientes:
             
             # Buscar compras do cliente
             self.db.cursor.execute('''
-                SELECT v.data_venda, v.codigo_venda, p.nome, v.quantidade, 
+                SELECT v.data_venda, v.id, p.nome, v.quantidade, 
                        v.preco_unitario, v.total, v.pontos_ganhos
                 FROM vendas v
                 JOIN produtos p ON v.codigo_produto = p.codigo
@@ -787,6 +1183,7 @@ class TelaClientes:
             hist_janela = tk.Toplevel(self.janela)
             hist_janela.title(f"Histórico de Compras - {nome}")
             hist_janela.geometry("900x400")
+            hist_janela.configure(bg='white')
             
             # Centralizar
             hist_janela.update_idletasks()
@@ -797,7 +1194,7 @@ class TelaClientes:
             hist_janela.geometry(f'{largura}x{altura}+{x}+{y}')
             
             # Frame para a tabela
-            frame = tk.Frame(hist_janela, padx=10, pady=10)
+            frame = tk.Frame(hist_janela, bg='white', padx=10, pady=10)
             frame.pack(fill='both', expand=True)
             
             # Scrollbars
@@ -808,21 +1205,20 @@ class TelaClientes:
             scroll_x.pack(side='bottom', fill='x')
             
             # Treeview
-            colunas = ('Data', 'Venda', 'Produto', 'Qtd', 'Preço Unit.', 'Total', 'Pontos')
-            tree = ttk.Treeview(frame, columns=colunas, show='headings',
-                               yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+            colunas = ('Data', 'ID', 'Produto', 'Qtd', 'Preço Unit.', 'Total', 'Pontos')
+            tree = ttk.Treeview(
+                frame,
+                columns=colunas,
+                show='headings',
+                yscrollcommand=scroll_y.set,
+                xscrollcommand=scroll_x.set
+            )
             
-            # Configurar colunas
-            tree.heading('Data', text='Data')
-            tree.heading('Venda', text='Venda')
-            tree.heading('Produto', text='Produto')
-            tree.heading('Qtd', text='Qtd')
-            tree.heading('Preço Unit.', text='Preço Unit.')
-            tree.heading('Total', text='Total')
-            tree.heading('Pontos', text='Pontos')
+            for col in colunas:
+                tree.heading(col, text=col)
             
             tree.column('Data', width=100)
-            tree.column('Venda', width=120)
+            tree.column('ID', width=80)
             tree.column('Produto', width=250)
             tree.column('Qtd', width=50)
             tree.column('Preço Unit.', width=100)
@@ -839,33 +1235,62 @@ class TelaClientes:
             total_pontos = 0
             
             for compra in compras:
-                data, venda, produto, qtd, preco, total, pontos = compra
+                data, venda_id, produto, qtd, preco, total, pontos = compra
                 tree.insert('', 'end', values=(
-                    data, venda, produto, qtd, f"R$ {preco:.2f}", 
+                    data, venda_id, produto, qtd, f"R$ {preco:.2f}", 
                     f"R$ {total:.2f}", pontos
                 ))
                 total_compras += total
                 total_pontos += pontos
             
             # Frame de resumo
-            frame_resumo = tk.Frame(hist_janela, bg='#f0f0f0', pady=10)
+            frame_resumo = tk.Frame(hist_janela, bg='#f8f8f8', pady=10)
             frame_resumo.pack(fill='x')
             
-            tk.Label(frame_resumo, text=f"Total em compras: R$ {total_compras:.2f}", 
-                    font=("Arial", 11, "bold"), bg='#f0f0f0').pack(side='left', padx=20)
+            tk.Label(
+                frame_resumo,
+                text=f"Total em compras: R$ {total_compras:.2f}",
+                font=("Arial", 11, "bold"),
+                bg='#f8f8f8',
+                fg=self.cor_primaria
+            ).pack(side='left', padx=20)
             
-            tk.Label(frame_resumo, text=f"Total de pontos ganhos: {total_pontos}", 
-                    font=("Arial", 11, "bold"), bg='#f0f0f0').pack(side='left', padx=20)
+            tk.Label(
+                frame_resumo,
+                text=f"Total de pontos ganhos: {total_pontos}",
+                font=("Arial", 11, "bold"),
+                bg='#f8f8f8',
+                fg=self.cor_primaria
+            ).pack(side='left', padx=20)
             
-            btn_fechar = tk.Button(frame_resumo, text="FECHAR", 
-                                   bg="#f44336", fg="white", font=("Arial", 10),
-                                   command=hist_janela.destroy)
+            btn_fechar = tk.Button(
+                frame_resumo,
+                text="FECHAR",
+                font=("Arial", 10),
+                bg=self.cor_botao,
+                fg=self.cor_texto_botao,
+                bd=1,
+                relief='solid',
+                padx=15,
+                pady=5,
+                cursor='hand2',
+                command=hist_janela.destroy
+            )
             btn_fechar.pack(side='right', padx=20)
+            
+            def on_enter(e):
+                btn_fechar['bg'] = '#f5f5f5'
+                btn_fechar['fg'] = self.cor_sombra
+            
+            def on_leave(e):
+                btn_fechar['bg'] = self.cor_botao
+                btn_fechar['fg'] = self.cor_texto_botao
+            
+            btn_fechar.bind('<Enter>', on_enter)
+            btn_fechar.bind('<Leave>', on_leave)
             
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um cliente para ver o histórico!")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao carregar histórico: {str(e)}")
     
     def bloquear_cliente(self):
         """Bloqueia o cliente selecionado"""
@@ -877,29 +1302,72 @@ class TelaClientes:
             # Dialog para motivo
             motivo_janela = tk.Toplevel(self.janela)
             motivo_janela.title("Bloquear Cliente")
-            motivo_janela.geometry("400x250")
+            motivo_janela.geometry("450x300")
+            motivo_janela.configure(bg='white')
             
             # Centralizar
             motivo_janela.update_idletasks()
-            largura = 400
-            altura = 250
+            largura = 450
+            altura = 300
             x = (motivo_janela.winfo_screenwidth() // 2) - (largura // 2)
             y = (motivo_janela.winfo_screenheight() // 2) - (altura // 2)
             motivo_janela.geometry(f'{largura}x{altura}+{x}+{y}')
             
-            tk.Label(motivo_janela, text=f"Cliente: {nome}", 
-                    font=("Arial", 11, "bold")).pack(pady=10)
+            frame = tk.Frame(motivo_janela, bg='white', padx=20, pady=20)
+            frame.pack(fill='both', expand=True)
             
-            tk.Label(motivo_janela, text="Motivo do bloqueio:").pack(pady=5)
+            tk.Label(
+                frame,
+                text=f"🚫 BLOQUEAR CLIENTE",
+                font=("Arial", 14, "bold"),
+                fg=self.cor_primaria,
+                bg='white'
+            ).pack(pady=10)
             
-            motivo_entry = tk.Entry(motivo_janela, font=("Arial", 10), width=40)
-            motivo_entry.pack(pady=5)
+            tk.Label(
+                frame,
+                text=f"Cliente: {nome}",
+                font=("Arial", 11, "bold"),
+                fg='#333333',
+                bg='white'
+            ).pack(pady=5)
             
-            tk.Label(motivo_janela, text="Data de vencimento (opcional):").pack(pady=5)
+            tk.Label(
+                frame,
+                text="Motivo do bloqueio:*",
+                font=("Arial", 10),
+                bg='white',
+                fg='#333333'
+            ).pack(anchor='w', pady=(10, 2))
             
-            vencimento_entry = tk.Entry(motivo_janela, font=("Arial", 10), width=20)
-            vencimento_entry.pack(pady=5)
-            vencimento_entry.insert(0, "dd/mm/aaaa")
+            motivo_entry = tk.Entry(
+                frame,
+                font=("Arial", 10),
+                width=40,
+                relief='solid',
+                bd=1,
+                highlightbackground='#dddddd'
+            )
+            motivo_entry.pack(pady=(0, 10), ipady=5)
+            
+            tk.Label(
+                frame,
+                text="Data de vencimento (opcional):",
+                font=("Arial", 10),
+                bg='white',
+                fg='#333333'
+            ).pack(anchor='w', pady=(10, 2))
+            
+            vencimento_entry = tk.Entry(
+                frame,
+                font=("Arial", 10),
+                width=20,
+                relief='solid',
+                bd=1,
+                highlightbackground='#dddddd'
+            )
+            vencimento_entry.pack(pady=(0, 10), ipady=5)
+            vencimento_entry.insert(0, "DD/MM/AAAA")
             
             def confirmar_bloqueio():
                 motivo = motivo_entry.get().strip()
@@ -908,7 +1376,7 @@ class TelaClientes:
                     return
                 
                 vencimento = vencimento_entry.get().strip()
-                if vencimento == "dd/mm/aaaa":
+                if vencimento == "DD/MM/AAAA":
                     vencimento = ""
                 
                 # Atualizar status do cliente
@@ -930,9 +1398,50 @@ class TelaClientes:
                 self.carregar_clientes()
                 self.carregar_blacklist()
             
-            btn_confirmar = tk.Button(motivo_janela, text="BLOQUEAR", bg="#f44336", fg="white",
-                                     font=("Arial", 10, "bold"), command=confirmar_bloqueio)
-            btn_confirmar.pack(pady=20)
+            frame_botoes = tk.Frame(frame, bg='white', pady=10)
+            frame_botoes.pack(fill='x')
+            
+            btn_confirmar = tk.Button(
+                frame_botoes,
+                text="🚫 CONFIRMAR BLOQUEIO",
+                font=("Arial", 11, "bold"),
+                bg=self.cor_botao,
+                fg=self.cor_texto_botao,
+                bd=1,
+                relief='solid',
+                padx=15,
+                pady=8,
+                cursor='hand2',
+                command=confirmar_bloqueio
+            )
+            btn_confirmar.pack(side='left', padx=5, expand=True, fill='x')
+            
+            btn_cancelar = tk.Button(
+                frame_botoes,
+                text="✖ CANCELAR",
+                font=("Arial", 11, "bold"),
+                bg=self.cor_botao,
+                fg=self.cor_texto_botao,
+                bd=1,
+                relief='solid',
+                padx=15,
+                pady=8,
+                cursor='hand2',
+                command=motivo_janela.destroy
+            )
+            btn_cancelar.pack(side='left', padx=5, expand=True, fill='x')
+            
+            for btn in [btn_confirmar, btn_cancelar]:
+                def on_enter(e, b=btn):
+                    b['bg'] = '#f5f5f5'
+                    b['fg'] = self.cor_sombra
+                
+                def on_leave(e, b=btn):
+                    b['bg'] = self.cor_botao
+                    b['fg'] = self.cor_texto_botao
+                
+                btn.bind('<Enter>', on_enter)
+                btn.bind('<Leave>', on_leave)
             
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um cliente para bloquear!")

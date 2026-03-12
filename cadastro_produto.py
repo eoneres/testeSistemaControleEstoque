@@ -6,33 +6,63 @@ from database import Database
 class TelaCadastro:
     def __init__(self, menu_principal):
         self.menu_principal = menu_principal
+        self.db = Database()
         self.janela = tk.Toplevel()
-        self.janela.title("Sistema de Estoque - Cadastrar Produto")
-        self.janela.geometry("550x700")  # Aumentei um pouco
+        self.janela.title("StockMaster - Cadastrar Produto")
+        self.janela.geometry("600x700")
         self.janela.resizable(False, False)
+        self.janela.configure(bg='#ff751f')
         
         # Centralizar
         self.janela.update_idletasks()
-        largura = 550
+        largura = 600
         altura = 700
         x = (self.janela.winfo_screenwidth() // 2) - (largura // 2)
         y = (self.janela.winfo_screenheight() // 2) - (altura // 2)
         self.janela.geometry(f'{largura}x{altura}+{x}+{y}')
         
-        # Trazer para frente
         self.janela.lift()
         self.janela.focus_force()
         
         self.entries = {}
-        self.criar_formulario()
+        self.criar_interface()
         self.janela.protocol("WM_DELETE_WINDOW", self.voltar_menu)
         self.janela.mainloop()
     
-    def criar_formulario(self):
-        # Canvas com scrollbar para garantir que tudo apareça
-        canvas = tk.Canvas(self.janela)
-        scrollbar = tk.Scrollbar(self.janela, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas)
+    def criar_interface(self):
+        # Cores
+        cor_primaria = '#ff751f'
+        cor_botao = '#ffffff'
+        cor_texto_botao = '#ff751f'
+        
+        # Frame branco principal
+        frame_conteudo = tk.Frame(self.janela, bg='white', bd=0)
+        frame_conteudo.pack(expand=True, fill='both', padx=20, pady=20)
+        
+        # Título
+        titulo = tk.Label(
+            frame_conteudo,
+            text="📦 CADASTRO DE PRODUTO",
+            font=("Arial", 18, "bold"),
+            fg=cor_primaria,
+            bg='white'
+        )
+        titulo.pack(pady=20)
+        
+        # Subtítulo
+        subtitulo = tk.Label(
+            frame_conteudo,
+            text="Preencha todos os campos obrigatórios (*)",
+            font=("Arial", 10, "italic"),
+            fg='#666666',
+            bg='white'
+        )
+        subtitulo.pack(pady=(0, 20))
+        
+        # Canvas com scroll
+        canvas = tk.Canvas(frame_conteudo, bg='white', highlightthickness=0)
+        scrollbar = tk.Scrollbar(frame_conteudo, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='white')
         
         scrollable_frame.bind(
             "<Configure>",
@@ -42,100 +72,130 @@ class TelaCadastro:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Frame principal dentro do scrollable_frame
-        frame = tk.Frame(scrollable_frame, padx=30, pady=20)
-        frame.pack(expand=True, fill='both')
+        # Formulário
+        frame_form = tk.Frame(scrollable_frame, bg='white', padx=30, pady=10)
+        frame_form.pack(fill='both', expand=True)
         
-        # Título
-        titulo = tk.Label(frame, text="CADASTRO DE PRODUTO", 
-                          font=("Arial", 18, "bold"), fg="#333")
-        titulo.pack(pady=20)
-        
-        # Instruções
-        instrucoes = tk.Label(frame, text="Preencha todos os campos abaixo:", 
-                             font=("Arial", 10, "italic"), fg="#666")
-        instrucoes.pack(pady=(0, 20))
-        
-        # Campos do formulário
+        # Campos
         campos = [
-            ("Nome do Produto:", "nome", "entry"),
-            ("Categoria:", "categoria", "combobox"),
-            ("Tamanho:", "tamanho", "combobox"),
-            ("Cor:", "cor", "entry"),
-            ("Quantidade:", "quantidade", "entry"),
-            ("Preço de Venda (R$):", "preco", "entry"),
-            ("Fornecedor:", "fornecedor", "entry")
+            ("Código de Barras:", "codigo_barras", "entry"),
+            ("Nome do Produto:*", "nome", "entry"),
+            ("Categoria:*", "categoria", "combobox"),
+            ("Tamanho:*", "tamanho", "combobox"),
+            ("Cor:*", "cor", "entry"),
+            ("Quantidade:*", "quantidade", "entry"),
+            ("Quantidade Mínima:", "quantidade_minima", "entry"),
+            ("Preço de Custo (R$):", "preco_custo", "entry"),
+            ("Preço de Venda (R$):*", "preco_venda", "entry"),
+            ("Fornecedor:*", "fornecedor", "entry"),
+            ("Localização:", "localizacao", "entry")
         ]
         
-        for i, (label_text, campo, tipo) in enumerate(campos):
-            # Frame para cada campo (melhor organização)
-            campo_frame = tk.Frame(frame)
-            campo_frame.pack(fill='x', pady=5)
-            
+        for label_text, campo, tipo in campos:
             # Label
-            tk.Label(campo_frame, text=label_text, font=("Arial", 10, "bold"),
-                    anchor='w').pack(anchor='w')
+            tk.Label(
+                frame_form,
+                text=label_text,
+                font=("Arial", 10, "bold"),
+                fg='#333333',
+                bg='white'
+            ).pack(anchor='w', pady=(10, 2))
             
-            # Entry ou Combobox
+            # Campo
             if tipo == "combobox":
                 if campo == "categoria":
-                    valores = ["Vestido", "Blusa", "Calça", "Acessório", "Saia", "Camisa"]
+                    valores = ["Vestido", "Blusa", "Calça", "Acessório", "Saia", "Camisa", "Bermuda", "Jaqueta"]
                 else:  # tamanho
-                    valores = ["PP", "P", "M", "G", "GG", "XG"]
+                    valores = ["PP", "P", "M", "G", "GG", "XG", "XXG", "Único"]
                 
-                entry = ttk.Combobox(campo_frame, values=valores, state='readonly', 
-                                    font=("Arial", 10))
-                entry.pack(fill='x', pady=5, ipady=3)  # ipady dá altura
+                entry = ttk.Combobox(
+                    frame_form,
+                    values=valores,
+                    state='readonly',
+                    font=("Arial", 10)
+                )
             else:
-                entry = tk.Entry(campo_frame, font=("Arial", 10), relief='solid', bd=1)
-                entry.pack(fill='x', pady=5, ipady=5)  # ipady dá altura
+                entry = tk.Entry(
+                    frame_form,
+                    font=("Arial", 10),
+                    relief='solid',
+                    bd=1,
+                    highlightbackground='#dddddd'
+                )
             
+            entry.pack(fill='x', pady=(0, 5), ipady=5)
             self.entries[campo] = entry
         
-        # Frame para botões (com fundo colorido para destacar)
-        frame_botoes = tk.Frame(frame, bg='#f0f0f0', pady=20)
-        frame_botoes.pack(fill='x', pady=30)
+        # Frame para botões
+        frame_botoes = tk.Frame(frame_conteudo, bg='white', pady=20)
+        frame_botoes.pack(fill='x')
         
-        # Botão Salvar (VERDE BEM VISÍVEL)
-        btn_salvar = tk.Button(frame_botoes, text="✅ SALVAR PRODUTO", 
-                               bg="#4CAF50", fg="white", font=("Arial", 12, "bold"),
-                               padx=30, pady=10, relief='raised', bd=3,
-                               command=self.salvar_produto)
-        btn_salvar.pack(side='left', padx=10, expand=True)
+        # Botão Salvar
+        btn_salvar = tk.Button(
+            frame_botoes,
+            text="💾 SALVAR PRODUTO",
+            font=("Arial", 12, "bold"),
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            bd=1,
+            relief='solid',
+            padx=30,
+            pady=10,
+            cursor='hand2',
+            command=self.salvar_produto
+        )
+        btn_salvar.pack(side='left', padx=5, expand=True, fill='x')
         
-        # Botão Voltar (VERMELHO)
-        btn_voltar = tk.Button(frame_botoes, text="↩️ VOLTAR", 
-                               bg="#f44336", fg="white", font=("Arial", 12, "bold"),
-                               padx=30, pady=10, relief='raised', bd=3,
-                               command=self.voltar_menu)
-        btn_voltar.pack(side='left', padx=10, expand=True)
+        # Botão Voltar
+        btn_voltar = tk.Button(
+            frame_botoes,
+            text="↩️ VOLTAR",
+            font=("Arial", 12, "bold"),
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            bd=1,
+            relief='solid',
+            padx=30,
+            pady=10,
+            cursor='hand2',
+            command=self.voltar_menu
+        )
+        btn_voltar.pack(side='left', padx=5, expand=True, fill='x')
         
-        # Empacotar o canvas e scrollbar
+        # Efeito hover nos botões
+        for btn in [btn_salvar, btn_voltar]:
+            def on_enter(e, b=btn):
+                b['bg'] = '#f5f5f5'
+                b['fg'] = '#e65c00'
+            
+            def on_leave(e, b=btn):
+                b['bg'] = cor_botao
+                b['fg'] = cor_texto_botao
+            
+            btn.bind('<Enter>', on_enter)
+            btn.bind('<Leave>', on_leave)
+        
+        # Empacotar canvas e scrollbar
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
     
     def salvar_produto(self):
-        print("🔵 Botão SALVAR clicado!")
-        
         db = Database()
         
         try:
-            # Coletar dados
             nome = self.entries["nome"].get().strip()
             categoria = self.entries["categoria"].get().strip()
             tamanho = self.entries["tamanho"].get().strip()
             cor = self.entries["cor"].get().strip()
             quantidade = self.entries["quantidade"].get().strip()
-            preco = self.entries["preco"].get().strip()
+            preco = self.entries["preco_venda"].get().strip()
             fornecedor = self.entries["fornecedor"].get().strip()
             
-            # Validar campos
             if not all([nome, categoria, tamanho, cor, quantidade, preco, fornecedor]):
-                messagebox.showerror("Erro", "Todos os campos são obrigatórios!")
+                messagebox.showerror("Erro", "Todos os campos obrigatórios devem ser preenchidos!")
                 db.fechar_conexao()
                 return
             
-            # Validar quantidade
             try:
                 quantidade = int(quantidade)
                 if quantidade <= 0:
@@ -147,7 +207,6 @@ class TelaCadastro:
                 db.fechar_conexao()
                 return
             
-            # Validar preço
             try:
                 preco = float(preco.replace(',', '.'))
                 if preco <= 0:
@@ -159,22 +218,21 @@ class TelaCadastro:
                 db.fechar_conexao()
                 return
             
-            # Criar objeto produto
             produto = Produto(nome, categoria, tamanho, cor, quantidade, preco, fornecedor)
             codigo = produto.gerar_codigo(db)
             
-            # Inserir no banco
             db.cursor.execute('''
-                INSERT INTO produtos (codigo, nome, categoria, tamanho, cor, 
+                INSERT INTO produtos (codigo, codigo_barras, nome, categoria, tamanho, cor, 
                                      quantidade, preco_venda, fornecedor, data_cadastro)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (codigo, nome, categoria, tamanho, cor, quantidade, preco, fornecedor, produto.data_cadastro))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (codigo, self.entries["codigo_barras"].get().strip(), nome, categoria, 
+                  tamanho, cor, quantidade, preco, fornecedor, produto.data_cadastro))
             
             db.conn.commit()
+            db.fechar_conexao()
             
             messagebox.showinfo("Sucesso", f"Produto cadastrado com sucesso!\nCódigo: {codigo}")
             
-            # Limpar campos
             for entry in self.entries.values():
                 if isinstance(entry, tk.Entry):
                     entry.delete(0, tk.END)
@@ -183,9 +241,6 @@ class TelaCadastro:
             
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao cadastrar produto: {str(e)}")
-            import traceback
-            traceback.print_exc()
-        finally:
             db.fechar_conexao()
     
     def voltar_menu(self):

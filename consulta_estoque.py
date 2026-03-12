@@ -7,16 +7,21 @@ class TelaConsulta:
         self.menu_principal = menu_principal
         self.db = Database()
         self.janela = tk.Toplevel()
-        self.janela.title("Sistema de Estoque - Consultar Estoque")
-        self.janela.geometry("1000x550")
+        self.janela.title("StockMaster - Consultar Estoque")
+        self.janela.geometry("1100x600")
+        self.janela.resizable(False, False)
+        self.janela.configure(bg='#ff751f')
         
-        # Centralizar a janela
+        # Centralizar
         self.janela.update_idletasks()
-        largura = 1000
-        altura = 550
+        largura = 1100
+        altura = 600
         x = (self.janela.winfo_screenwidth() // 2) - (largura // 2)
         y = (self.janela.winfo_screenheight() // 2) - (altura // 2)
         self.janela.geometry(f'{largura}x{altura}+{x}+{y}')
+        
+        self.janela.lift()
+        self.janela.focus_force()
         
         self.criar_interface()
         self.carregar_produtos()
@@ -24,35 +29,97 @@ class TelaConsulta:
         self.janela.mainloop()
     
     def criar_interface(self):
-        # Frame superior (busca)
-        frame_busca = tk.Frame(self.janela, bg='#f0f0f0', padx=10, pady=10)
-        frame_busca.pack(fill='x')
+        # Cores
+        cor_primaria = '#ff751f'
+        cor_botao = '#ffffff'
+        cor_texto_botao = '#ff751f'
         
-        tk.Label(frame_busca, text="Buscar:", bg='#f0f0f0', font=("Arial", 10)).pack(side='left', padx=5)
+        # Frame branco principal
+        frame_conteudo = tk.Frame(self.janela, bg='white', bd=0)
+        frame_conteudo.pack(expand=True, fill='both', padx=20, pady=20)
         
-        self.busca_entry = tk.Entry(frame_busca, font=("Arial", 10), width=30)
-        self.busca_entry.pack(side='left', padx=5)
+        # Título
+        titulo = tk.Label(
+            frame_conteudo,
+            text="🔍 CONSULTAR ESTOQUE",
+            font=("Arial", 18, "bold"),
+            fg=cor_primaria,
+            bg='white'
+        )
+        titulo.pack(pady=20)
+        
+        # Frame de busca
+        frame_busca = tk.Frame(frame_conteudo, bg='white')
+        frame_busca.pack(fill='x', padx=20, pady=10)
+        
+        tk.Label(
+            frame_busca,
+            text="Buscar:",
+            font=("Arial", 11),
+            bg='white',
+            fg='#333333'
+        ).pack(side='left', padx=(0, 10))
+        
+        self.busca_entry = tk.Entry(
+            frame_busca,
+            font=("Arial", 11),
+            width=25,
+            relief='solid',
+            bd=1,
+            highlightbackground='#dddddd'
+        )
+        self.busca_entry.pack(side='left', padx=(0, 10), ipady=5)
         
         self.filtro_var = tk.StringVar(value="todos")
         filtros = [("Todos", "todos"), ("Nome", "nome"), ("Categoria", "categoria"), 
                    ("Código", "codigo"), ("Cód. Barras", "codigo_barras")]
         
         for texto, valor in filtros:
-            rb = tk.Radiobutton(frame_busca, text=texto, variable=self.filtro_var, 
-                              value=valor, bg='#f0f0f0', font=("Arial", 9))
+            rb = tk.Radiobutton(
+                frame_busca,
+                text=texto,
+                variable=self.filtro_var,
+                value=valor,
+                bg='white',
+                fg='#333333',
+                font=("Arial", 9),
+                cursor='hand2'
+            )
             rb.pack(side='left', padx=5)
         
-        btn_buscar = tk.Button(frame_busca, text="🔍 BUSCAR", bg="#2196F3", fg="white",
-                              font=("Arial", 9, "bold"), command=self.buscar_produtos)
+        btn_buscar = tk.Button(
+            frame_busca,
+            text="🔍 BUSCAR",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 9, "bold"),
+            bd=1,
+            relief='solid',
+            padx=10,
+            pady=5,
+            cursor='hand2',
+            command=self.buscar_produtos
+        )
         btn_buscar.pack(side='left', padx=5)
         
-        btn_limpar = tk.Button(frame_busca, text="LIMPAR", bg="#FF9800", fg="white",
-                              font=("Arial", 9, "bold"), command=self.limpar_busca)
+        btn_limpar = tk.Button(
+            frame_busca,
+            text="✖ LIMPAR",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 9, "bold"),
+            bd=1,
+            relief='solid',
+            padx=10,
+            pady=5,
+            cursor='hand2',
+            command=self.limpar_busca
+        )
         btn_limpar.pack(side='left', padx=5)
         
         # Frame da tabela
-        frame_tabela = tk.Frame(self.janela)
-        frame_tabela.pack(fill='both', expand=True, padx=10, pady=10)
+        frame_tabela = tk.Frame(frame_conteudo, bg='white')
+        frame_tabela.pack(fill='both', expand=True, padx=20, pady=10)
         
         # Scrollbars
         scroll_y = tk.Scrollbar(frame_tabela)
@@ -61,11 +128,17 @@ class TelaConsulta:
         scroll_x = tk.Scrollbar(frame_tabela, orient='horizontal')
         scroll_x.pack(side='bottom', fill='x')
         
-        # Treeview com 9 colunas
+        # Treeview
         colunas = ('Código', 'Cód. Barras', 'Nome', 'Categoria', 'Tamanho', 'Cor', 
                    'Quantidade', 'Preço', 'Fornecedor')
-        self.tree = ttk.Treeview(frame_tabela, columns=colunas, show='headings',
-                                 yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        self.tree = ttk.Treeview(
+            frame_tabela,
+            columns=colunas,
+            show='headings',
+            yscrollcommand=scroll_y.set,
+            xscrollcommand=scroll_x.set,
+            height=15
+        )
         
         # Configurar colunas
         for col in colunas:
@@ -87,34 +160,78 @@ class TelaConsulta:
         scroll_x.config(command=self.tree.xview)
         
         # Tags para cores
-        self.tree.tag_configure('estoque_baixo', background='#ffcdd2')
+        self.tree.tag_configure('estoque_baixo', background='#ffe5e5')
         
-        # Vincular duplo clique para editar
+        # Bind para duplo clique
         self.tree.bind('<Double-1>', self.abrir_para_editar)
         
-        # Frame inferior (botões)
-        frame_botoes = tk.Frame(self.janela, pady=10)
-        frame_botoes.pack()
+        # Frame de botões inferiores
+        frame_botoes = tk.Frame(frame_conteudo, bg='white', pady=15)
+        frame_botoes.pack(fill='x')
         
-        btn_atualizar = tk.Button(frame_botoes, text="ATUALIZAR", bg="#4CAF50", fg="white",
-                                 font=("Arial", 10, "bold"), padx=20, command=self.carregar_produtos)
-        btn_atualizar.pack(side='left', padx=5)
+        btn_atualizar = tk.Button(
+            frame_botoes,
+            text="🔄 ATUALIZAR",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 10, "bold"),
+            bd=1,
+            relief='solid',
+            padx=20,
+            pady=8,
+            cursor='hand2',
+            command=self.carregar_produtos
+        )
+        btn_atualizar.pack(side='left', padx=5, expand=True, fill='x')
         
-        btn_editar = tk.Button(frame_botoes, text="EDITAR SELECIONADO", bg="#FF9800", fg="white",
-                              font=("Arial", 10, "bold"), padx=20, command=self.editar_selecionado)
-        btn_editar.pack(side='left', padx=5)
+        btn_editar = tk.Button(
+            frame_botoes,
+            text="✏️ EDITAR SELECIONADO",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 10, "bold"),
+            bd=1,
+            relief='solid',
+            padx=20,
+            pady=8,
+            cursor='hand2',
+            command=self.editar_selecionado
+        )
+        btn_editar.pack(side='left', padx=5, expand=True, fill='x')
         
-        btn_voltar = tk.Button(frame_botoes, text="VOLTAR", bg="#f44336", fg="white",
-                              font=("Arial", 10, "bold"), padx=20, command=self.voltar_menu)
-        btn_voltar.pack(side='left', padx=5)
+        btn_voltar = tk.Button(
+            frame_botoes,
+            text="↩️ VOLTAR",
+            bg=cor_botao,
+            fg=cor_texto_botao,
+            font=("Arial", 10, "bold"),
+            bd=1,
+            relief='solid',
+            padx=20,
+            pady=8,
+            cursor='hand2',
+            command=self.voltar_menu
+        )
+        btn_voltar.pack(side='left', padx=5, expand=True, fill='x')
+        
+        # Efeito hover nos botões
+        for btn in [btn_buscar, btn_limpar, btn_atualizar, btn_editar, btn_voltar]:
+            def on_enter(e, b=btn):
+                b['bg'] = '#f5f5f5'
+                b['fg'] = '#e65c00'
+            
+            def on_leave(e, b=btn):
+                b['bg'] = cor_botao
+                b['fg'] = cor_texto_botao
+            
+            btn.bind('<Enter>', on_enter)
+            btn.bind('<Leave>', on_leave)
     
     def carregar_produtos(self):
-        """Carrega todos os produtos na treeview"""
         # Limpar treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Buscar todos os produtos
         self.db.cursor.execute('''
             SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
                    quantidade, preco_venda, fornecedor
@@ -125,34 +242,19 @@ class TelaConsulta:
         produtos = self.db.cursor.fetchall()
         
         for produto in produtos:
-            # Desempacotar 9 valores
             codigo, codigo_barras, nome, categoria, tamanho, cor, quantidade, preco, fornecedor = produto
-            
-            # Formatar preço
             preco_formatado = f"R$ {preco:.2f}"
-            
-            # Tratar código de barras vazio
             codigo_barras = codigo_barras or ""
             
-            # Inserir na treeview
             item = self.tree.insert('', 'end', values=(
-                codigo,
-                codigo_barras,
-                nome,
-                categoria,
-                tamanho,
-                cor,
-                quantidade,
-                preco_formatado,
-                fornecedor
+                codigo, codigo_barras, nome, categoria, tamanho, cor,
+                quantidade, preco_formatado, fornecedor
             ))
             
-            # Destacar em vermelho se estoque baixo
             if quantidade < 5:
                 self.tree.item(item, tags=('estoque_baixo',))
     
     def buscar_produtos(self):
-        """Busca produtos conforme filtro"""
         termo = self.busca_entry.get()
         filtro = self.filtro_var.get()
         
@@ -160,11 +262,9 @@ class TelaConsulta:
             self.carregar_produtos()
             return
         
-        # Limpar treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Construir query baseada no filtro
         if filtro == "todos":
             query = '''
                 SELECT codigo, codigo_barras, nome, categoria, tamanho, cor, 
@@ -203,44 +303,22 @@ class TelaConsulta:
             codigo_barras = codigo_barras or ""
             
             item = self.tree.insert('', 'end', values=(
-                codigo,
-                codigo_barras,
-                nome,
-                categoria,
-                tamanho,
-                cor,
-                quantidade,
-                preco_formatado,
-                fornecedor
+                codigo, codigo_barras, nome, categoria, tamanho, cor,
+                quantidade, preco_formatado, fornecedor
             ))
             
             if quantidade < 5:
                 self.tree.item(item, tags=('estoque_baixo',))
     
     def limpar_busca(self):
-        """Limpa os campos de busca e recarrega produtos"""
         self.busca_entry.delete(0, tk.END)
         self.filtro_var.set("todos")
         self.carregar_produtos()
     
     def abrir_para_editar(self, event):
-        """Abre o produto selecionado para edição com duplo clique"""
-        try:
-            item = self.tree.selection()[0]
-            codigo = self.tree.item(item, 'values')[0]
-            
-            self.janela.destroy()
-            
-            from gerenciar_produto import TelaGerenciarProduto
-            TelaGerenciarProduto(self.menu_principal, codigo)
-            
-        except IndexError:
-            messagebox.showwarning("Aviso", "Selecione um produto para editar!")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao abrir produto: {str(e)}")
+        self.editar_selecionado()
     
     def editar_selecionado(self):
-        """Abre o produto selecionado para edição pelo botão"""
         try:
             item = self.tree.selection()[0]
             codigo = self.tree.item(item, 'values')[0]
@@ -254,7 +332,6 @@ class TelaConsulta:
             messagebox.showwarning("Aviso", "Selecione um produto para editar!")
     
     def voltar_menu(self):
-        """Volta para o menu principal"""
         self.db.fechar_conexao()
         self.janela.destroy()
         self.menu_principal.deiconify()
