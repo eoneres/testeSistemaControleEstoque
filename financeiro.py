@@ -15,13 +15,13 @@ class TelaFinanceiro:
         self.janela.title("StockMaster - Gestão Financeira")
         self.janela.geometry("1200x700")
         self.janela.resizable(False, False)
-        self.janela.configure(bg=Estilos.COR_FUNDO)
+        self.janela.configure(bg='#f5f5f5')  # Fundo cinza claro
         
-        # Cores
+        # Cores (usando Estilos)
         self.cor_primaria = Estilos.COR_PRIMARIA
-        self.cor_sucesso = '#28a745'  # Verde para entradas
-        self.cor_perigo = '#dc3545'    # Vermelho para saídas
-        self.cor_alerta = '#ffc107'    # Amarelo para alertas
+        self.cor_sucesso = Estilos.COR_SUCESSO
+        self.cor_perigo = Estilos.COR_PERIGO
+        self.cor_alerta = Estilos.COR_ALERTA
         
         # Centralizar
         self.janela.update_idletasks()
@@ -40,12 +40,13 @@ class TelaFinanceiro:
         self.janela.mainloop()
     
     def criar_interface(self):
-        # Frame branco principal
+        # Frame branco principal (card)
         frame_conteudo = tk.Frame(
             self.janela,
-            bg=Estilos.COR_FUNDO_CONTEUDO,
-            bd=0,
-            highlightthickness=0
+            bg='white',
+            highlightbackground=Estilos.COR_BORDA,
+            highlightthickness=1,
+            bd=0
         )
         frame_conteudo.pack(expand=True, fill='both', padx=20, pady=20)
         
@@ -70,19 +71,16 @@ class TelaFinanceiro:
             frame_cabecalho,
             text=f"📅 {data_atual}",
             font=("Arial", 12),
-            fg='#666666',
+            fg=Estilos.COR_TEXTO_SECUNDARIO,
             bg='white'
         ).pack(side='right', padx=20)
         
         # ===== BOTÃO VOLTAR =====
-        btn_voltar_frame, btn_voltar = Estilos.criar_botao_arredondado(
+        btn_voltar_frame, btn_voltar = Estilos.criar_botao_moderno(
             frame_cabecalho,
             "Voltar",
             self.voltar,
-            cor_fundo='white',
-            cor_texto=self.cor_primaria,
-            largura=8,
-            altura=1,
+            tipo='secundario',
             icone="↩️"
         )
         btn_voltar_frame.pack(side='right', padx=10)
@@ -99,31 +97,34 @@ class TelaFinanceiro:
         dados = self.calcular_indicadores()
         
         # Card 1 - Saldo Atual
-        self.card_saldo = self.criar_card_indicador(
+        self.card_saldo = self.criar_card_financeiro(
             frame_indicadores,
-            "💵 SALDO ATUAL",
+            "Saldo Atual",
             f"R$ {dados['saldo']:.2f}",
             "disponível",
+            "💵",
             self.cor_primaria,
             0
         )
         
         # Card 2 - Receitas do Mês
-        self.card_receitas = self.criar_card_indicador(
+        self.card_receitas = self.criar_card_financeiro(
             frame_indicadores,
-            "📈 RECEITAS MÊS",
+            "Receitas do Mês",
             f"R$ {dados['receitas_mes']:.2f}",
             "entradas",
+            "📈",
             self.cor_sucesso,
             1
         )
         
         # Card 3 - Despesas do Mês
-        self.card_despesas = self.criar_card_indicador(
+        self.card_despesas = self.criar_card_financeiro(
             frame_indicadores,
-            "📉 DESPESAS MÊS",
+            "Despesas do Mês",
             f"R$ {dados['despesas_mes']:.2f}",
             "saídas",
+            "📉",
             self.cor_perigo,
             2
         )
@@ -131,11 +132,12 @@ class TelaFinanceiro:
         # Card 4 - Lucro Líquido
         lucro = dados['receitas_mes'] - dados['despesas_mes']
         cor_lucro = self.cor_sucesso if lucro >= 0 else self.cor_perigo
-        self.card_lucro = self.criar_card_indicador(
+        self.card_lucro = self.criar_card_financeiro(
             frame_indicadores,
-            "📊 LUCRO LÍQUIDO",
+            "Lucro Líquido",
             f"R$ {lucro:.2f}",
             "resultado do mês",
+            "📊",
             cor_lucro,
             3
         )
@@ -165,12 +167,12 @@ class TelaFinanceiro:
         self.notebook.add(frame_relatorios, text="📑 Relatórios")
         self.criar_aba_relatorios(frame_relatorios)
     
-    def criar_card_indicador(self, parent, titulo, valor, subtitulo, cor, coluna):
-        """Cria um card para indicadores financeiros"""
+    def criar_card_financeiro(self, parent, titulo, valor, subtitulo, icone, cor, coluna):
+        """Cria um card financeiro no estilo moderno"""
         card = tk.Frame(
             parent,
             bg='white',
-            highlightbackground='#e0e0e0',
+            highlightbackground=Estilos.COR_BORDA,
             highlightthickness=1,
             bd=0,
             width=250,
@@ -179,32 +181,44 @@ class TelaFinanceiro:
         card.grid(row=0, column=coluna, padx=10, pady=5, sticky='nsew')
         card.grid_propagate(False)
         
-        conteudo = tk.Frame(card, bg='white', padx=12, pady=8)
-        conteudo.pack(fill='both', expand=True)
+        # Layout do card
+        frame_info = tk.Frame(card, bg='white', padx=12, pady=8)
+        frame_info.pack(side='left', fill='both', expand=True)
         
         tk.Label(
-            conteudo,
+            frame_info,
             text=titulo,
-            font=("Arial", 10, "bold"),
-            fg='#666666',
+            font=("Arial", 10),
+            fg=Estilos.COR_TEXTO_SECUNDARIO,
             bg='white'
         ).pack(anchor='w')
         
         tk.Label(
-            conteudo,
+            frame_info,
             text=valor,
-            font=("Arial", 18, "bold"),
+            font=("Arial", 16, "bold"),
             fg=cor,
             bg='white'
-        ).pack(anchor='w', pady=(5, 2))
+        ).pack(anchor='w', pady=(2, 0))
         
         tk.Label(
-            conteudo,
+            frame_info,
             text=subtitulo,
-            font=("Arial", 9),
+            font=("Arial", 8),
             fg='#999999',
             bg='white'
         ).pack(anchor='w')
+        
+        frame_icone = tk.Frame(card, bg='white', width=50)
+        frame_icone.pack(side='right', fill='y', padx=(0, 10))
+        
+        tk.Label(
+            frame_icone,
+            text=icone,
+            font=("Arial", 24),
+            fg=cor,
+            bg='white'
+        ).pack(expand=True)
         
         return card
     
@@ -297,26 +311,20 @@ class TelaFinanceiro:
         frame_botoes = tk.Frame(frame, bg='white', height=50)
         frame_botoes.pack(fill='x', pady=(0, 10))
         
-        btn_novo_frame, btn_novo = Estilos.criar_botao_arredondado(
+        btn_novo_frame, btn_novo = Estilos.criar_botao_moderno(
             frame_botoes,
             "Nova Conta",
             self.nova_conta_pagar,
-            cor_fundo='white',
-            cor_texto=self.cor_primaria,
-            largura=15,
-            altura=1,
+            tipo='primario',
             icone="➕"
         )
         btn_novo_frame.pack(side='left', padx=5)
         
-        btn_pagar_frame, btn_pagar = Estilos.criar_botao_arredondado(
+        btn_pagar_frame, btn_pagar = Estilos.criar_botao_moderno(
             frame_botoes,
             "Baixar Selecionada",
             self.baixar_conta,
-            cor_fundo='white',
-            cor_texto=self.cor_sucesso,
-            largura=15,
-            altura=1,
+            tipo='sucesso',
             icone="✅"
         )
         btn_pagar_frame.pack(side='left', padx=5)
@@ -364,26 +372,20 @@ class TelaFinanceiro:
         frame_botoes = tk.Frame(frame, bg='white', height=50)
         frame_botoes.pack(fill='x', pady=(0, 10))
         
-        btn_novo_frame, btn_novo = Estilos.criar_botao_arredondado(
+        btn_novo_frame, btn_novo = Estilos.criar_botao_moderno(
             frame_botoes,
             "Nova Conta",
             self.nova_conta_receber,
-            cor_fundo='white',
-            cor_texto=self.cor_primaria,
-            largura=15,
-            altura=1,
+            tipo='primario',
             icone="➕"
         )
         btn_novo_frame.pack(side='left', padx=5)
         
-        btn_receber_frame, btn_receber = Estilos.criar_botao_arredondado(
+        btn_receber_frame, btn_receber = Estilos.criar_botao_moderno(
             frame_botoes,
             "Receber",
             self.receber_conta,
-            cor_fundo='white',
-            cor_texto=self.cor_sucesso,
-            largura=15,
-            altura=1,
+            tipo='sucesso',
             icone="💰"
         )
         btn_receber_frame.pack(side='left', padx=5)
@@ -448,14 +450,11 @@ class TelaFinanceiro:
         ]
         
         for texto, comando in relatorios:
-            btn_frame, btn = Estilos.criar_botao_arredondado(
+            btn_frame, btn = Estilos.criar_botao_moderno(
                 frame_opcoes,
                 texto,
                 comando,
-                cor_fundo='white',
-                cor_texto=self.cor_primaria,
-                largura=20,
-                altura=1
+                tipo='secundario'
             )
             btn_frame.pack(pady=5)
         
@@ -546,8 +545,6 @@ class TelaFinanceiro:
         for item in self.tree_pagar.get_children():
             self.tree_pagar.delete(item)
         
-        hoje = datetime.now()
-        
         # Dados simulados
         contas = [
             (1, "Compra de Mercadorias", "Fornecedor ABC", "20/03/2025", "R$ 3.500,00", "5 dias", "A Pagar"),
@@ -598,20 +595,18 @@ class TelaFinanceiro:
         self.atualizar_card(self.card_saldo, f"R$ {dados['saldo']:.2f}")
         self.atualizar_card(self.card_receitas, f"R$ {dados['receitas_mes']:.2f}")
         self.atualizar_card(self.card_despesas, f"R$ {dados['despesas_mes']:.2f}")
-        self.atualizar_card(self.card_lucro, f"R$ {lucro:.2f}", cor_lucro)
-        
-        # Recarregar listas
-        self.carregar_contas_pagar()
-        self.carregar_contas_receber()
+        self.atualizar_card(self.card_lucro, f"R$ {lucro:.2f}")
     
-    def atualizar_card(self, card, novo_valor, nova_cor=None):
+    def atualizar_card(self, card, novo_valor):
         """Atualiza o valor de um card"""
         for widget in card.winfo_children():
-            for child in widget.winfo_children():
-                if isinstance(child, tk.Label) and child.cget('font')[1] == 18:
-                    child.config(text=novo_valor)
-                    if nova_cor:
-                        child.config(fg=nova_cor)
+            if isinstance(widget, tk.Frame):
+                for child in widget.winfo_children():
+                    if isinstance(child, tk.Frame):  # frame_info
+                        for label in child.winfo_children():
+                            if isinstance(label, tk.Label):
+                                if label.cget('font')[1] == 16:  # valor
+                                    label.config(text=novo_valor)
     
     def nova_conta_pagar(self):
         """Abre diálogo para nova conta a pagar"""

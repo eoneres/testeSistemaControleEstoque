@@ -1,3 +1,4 @@
+# menu.py
 import tkinter as tk
 from tkinter import messagebox
 from database import Database
@@ -11,7 +12,7 @@ class TelaMenu:
         self.janela.title("StockMaster - Menu Principal")
         self.janela.geometry("1100x720")
         self.janela.resizable(False, False)
-        self.janela.configure(bg=Estilos.COR_FUNDO)
+        self.janela.configure(bg='#f5f5f5')
         
         # Centralizar
         self.janela.update_idletasks()
@@ -24,222 +25,230 @@ class TelaMenu:
         self.janela.lift()
         self.janela.focus_force()
         
-        # Variáveis para os cards (para poder atualizar)
-        self.card_vendas = None
-        self.card_estoque = None
-        self.card_mais_vendido = None
-        self.frame_cards = None
-        
+        self.cards = {}
         self.criar_interface()
         self.atualizar_cards()  # Atualização inicial
         self.janela.mainloop()
     
     def criar_interface(self):
-        # Frame branco principal
-        frame_conteudo = tk.Frame(
-            self.janela,
-            bg=Estilos.COR_FUNDO_CONTEUDO,
-            bd=0,
-            highlightthickness=0
-        )
-        frame_conteudo.pack(expand=True, fill='both', padx=25, pady=25)
+        # ===== HEADER =====
+        header = tk.Frame(self.janela, bg='white', height=70)
+        header.pack(fill='x', padx=20, pady=(20, 10))
+        header.pack_propagate(False)
         
-        # ===== ÁREA DO CABEÇALHO COM BOTÃO SAIR =====
-        frame_cabecalho_completo = tk.Frame(frame_conteudo, bg='white', height=150)
-        frame_cabecalho_completo.pack(fill='x', padx=20, pady=(10, 10))
-        frame_cabecalho_completo.pack_propagate(False)
-        
-        # Botão SAIR no canto superior esquerdo
-        btn_sair_frame, btn_sair = Estilos.criar_botao_arredondado(
-            frame_cabecalho_completo,
-            "Sair",
-            self.confirmar_sair,
-            cor_fundo='white',
-            cor_texto=Estilos.COR_PRIMARIA,
-            largura=8,
-            altura=1,
-            icone="🚪"
-        )
-        btn_sair_frame.place(x=10, y=10)
-        
-        # Título "StockMaster" no centro do cabeçalho
-        titulo_sistema = tk.Label(
-            frame_cabecalho_completo,
-            text="STOCKMASTER",
-            font=("Arial", 18, "bold"),
+        # Logo e título
+        tk.Label(
+            header,
+            text="📦 STOCKMASTER",
+            font=("Arial", 20, "bold"),
             fg=Estilos.COR_PRIMARIA,
             bg='white'
-        )
-        titulo_sistema.place(relx=0.5, y=25, anchor='center')
+        ).pack(side='left', padx=20)
         
-        # Subtítulo
-        subtitulo = tk.Label(
-            frame_cabecalho_completo,
-            text="Sistema de Gestão de Estoque",
-            font=("Arial", 10),
-            fg='#666666',
+        tk.Label(
+            header,
+            text=datetime.now().strftime("%d/%m/%Y"),
+            font=("Arial", 11),
+            fg=Estilos.COR_TEXTO_SECUNDARIO,
             bg='white'
-        )
-        subtitulo.place(relx=0.5, y=55, anchor='center')
+        ).pack(side='right', padx=20)
         
-        # Botão Atualizar (novo)
-        btn_atualizar_frame, btn_atualizar = Estilos.criar_botao_arredondado(
-            frame_cabecalho_completo,
-            "Atualizar",
-            self.atualizar_cards,
-            cor_fundo='white',
-            cor_texto=Estilos.COR_PRIMARIA,
-            largura=8,
-            altura=1,
-            icone="🔄"
-        )
-        btn_atualizar_frame.place(x=950, y=10)
-        
-        # ===== CARDS =====
-        self.frame_cards = tk.Frame(frame_conteudo, bg='white', height=140)
-        self.frame_cards.pack(fill='x', padx=30, pady=(20, 20))
-        self.frame_cards.pack_propagate(False)
+        # ===== CARDS DE INDICADORES =====
+        frame_cards = tk.Frame(self.janela, bg='#f5f5f5')
+        frame_cards.pack(fill='x', padx=20, pady=10)
         
         for i in range(3):
-            self.frame_cards.columnconfigure(i, weight=1)
+            frame_cards.columnconfigure(i, weight=1)
         
-        # Criar cards (serão atualizados depois)
-        self.criar_cards()
+        # Buscar dados iniciais
+        vendas_count, vendas_total = self.calcular_vendas_dia()
+        estoque_baixo = self.calcular_estoque_baixo()
+        mais_vendido = self.calcular_mais_vendidos()
         
-        # ===== TÍTULO DA SEÇÃO DE MENU =====
-        titulo_secao = tk.Label(
-            frame_conteudo,
-            text="MENU PRINCIPAL",
-            font=("Arial", 22, "bold"),
-            fg=Estilos.COR_PRIMARIA,
-            bg='white'
+        # Card 1 - Vendas do Dia
+        self.cards['vendas'] = Estilos.criar_card_moderno(
+            frame_cards,
+            "Vendas Hoje",
+            vendas_count,
+            f"Total: {vendas_total}",
+            "📊",
+            largura=330,
+            altura=110
         )
-        titulo_secao.pack(pady=(10, 25))
+        self.cards['vendas'].grid(row=0, column=0, padx=10, pady=5, sticky='nsew')
+        
+        # Card 2 - Estoque Baixo
+        self.cards['estoque'] = Estilos.criar_card_moderno(
+            frame_cards,
+            "Estoque Baixo",
+            estoque_baixo,
+            "produtos críticos",
+            "⚠️",
+            largura=330,
+            altura=110
+        )
+        self.cards['estoque'].grid(row=0, column=1, padx=10, pady=5, sticky='nsew')
+        
+        # Card 3 - Mais Vendido
+        self.cards['top'] = Estilos.criar_card_moderno(
+            frame_cards,
+            "Mais Vendido",
+            mais_vendido,
+            "item do dia",
+            "🔥",
+            largura=330,
+            altura=110
+        )
+        self.cards['top'].grid(row=0, column=2, padx=10, pady=5, sticky='nsew')
+        
+        # ===== SEÇÃO PRINCIPAL =====
+        secao_principal = Estilos.criar_secao(self.janela, "Módulos do Sistema")
         
         # ===== BOTÕES PRINCIPAIS =====
-        frame_botoes = tk.Frame(frame_conteudo, bg='white')
-        frame_botoes.pack(expand=True, fill='both', padx=50, pady=10)
+        frame_botoes = tk.Frame(self.janela, bg='#f5f5f5')
+        frame_botoes.pack(expand=True, fill='both', padx=30, pady=10)
         
-        # Configurar grid 2x3
+        # Grid 2x3
         for i in range(2):
             frame_botoes.rowconfigure(i, weight=1)
         for j in range(3):
             frame_botoes.columnconfigure(j, weight=1)
         
-        # Lista de botões (agora incluindo Financeiro)
+        # Botões com ícones
         botoes = [
-            ("📦 CADASTRAR\nPRODUTO", self.abrir_cadastro),
-            ("🔍 CONSULTAR\nESTOQUE", self.abrir_consulta),
-            ("💰 REGISTRAR\nVENDA", self.abrir_venda),
-            ("👥 GERENCIAR\nCLIENTES", self.abrir_clientes),
-            ("💵 FINANCEIRO", self.abrir_financeiro),
-            ("📊 RELATÓRIOS", self.abrir_relatorios)
+            ("📦 PRODUTOS", self.abrir_cadastro, "Cadastrar", "primario"),
+            ("🔍 CONSULTAR", self.abrir_consulta, "Estoque", "secundario"),
+            ("💰 VENDAS", self.abrir_venda, "Registrar", "primario"),
+            ("👥 CLIENTES", self.abrir_clientes, "Gerenciar", "secundario"),
+            ("💵 FINANCEIRO", self.abrir_financeiro, "Controle", "primario"),
+            ("📊 RELATÓRIOS", self.abrir_relatorios, "Gerar", "secundario")
         ]
         
         posicoes = [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)]
         
-        for (texto, comando), (row, col) in zip(botoes, posicoes):
-            frame_btn, btn = Estilos.criar_botao_arredondado(
-                frame_botoes,
-                texto,
-                comando,
-                cor_fundo='white',
-                cor_texto=Estilos.COR_PRIMARIA,
-                largura=16,
-                altura=3
-            )
-            frame_btn.grid(row=row, column=col, padx=20, pady=15, sticky='nsew')
+        for (titulo, comando, subtitulo, tipo), (row, col) in zip(botoes, posicoes):
+            self.criar_botao_card(frame_botoes, titulo, subtitulo, comando, tipo, row, col)
         
-        # ===== RODAPÉ =====
-        rodape = tk.Label(
-            frame_conteudo,
-            text="© 2025 StockMaster - Todos os direitos reservados",
-            font=("Arial", 8),
-            fg='#cccccc',
-            bg='white'
+        # ===== BOTÃO SAIR =====
+        frame_sair = tk.Frame(self.janela, bg='#f5f5f5')
+        frame_sair.pack(fill='x', padx=20, pady=10)
+        
+        btn_sair_frame, btn_sair = Estilos.criar_botao_moderno(
+            frame_sair,
+            "Sair do Sistema",
+            self.confirmar_sair,
+            tipo='secundario',
+            icone="🚪"
         )
-        rodape.pack(side='bottom', pady=10)
+        btn_sair_frame.pack(side='right')
     
-    def criar_cards(self):
-        """Cria os cards (ou recria se já existirem)"""
-        # Limpar cards antigos se existirem
-        if self.card_vendas:
-            self.card_vendas.destroy()
-        if self.card_estoque:
-            self.card_estoque.destroy()
-        if self.card_mais_vendido:
-            self.card_mais_vendido.destroy()
-        
-        # Buscar dados atualizados
-        vendas_valor, vendas_unidade = self.calcular_vendas_dia()
-        estoque_valor = self.calcular_estoque_baixo()
-        mais_vendido = self.calcular_mais_vendidos()
-        
-        # Card 1 - Vendas do Dia
-        self.card_vendas = Estilos.criar_card_cabecalho(
-            self.frame_cards,
-            "📊 VENDAS DO DIA",
-            vendas_valor,
-            vendas_unidade,
-            Estilos.COR_PRIMARIA,
-            largura=280,
-            altura=130
+    def criar_botao_card(self, parent, titulo, subtitulo, comando, tipo, row, col):
+        """Cria um card de botão no estilo moderno"""
+        frame = tk.Frame(
+            parent,
+            bg='white',
+            highlightbackground=Estilos.COR_BORDA,
+            highlightthickness=1,
+            bd=0
         )
-        self.card_vendas.grid(row=0, column=0, padx=15, pady=5, sticky='nsew')
+        frame.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
         
-        # Card 2 - Estoque Baixo
-        self.card_estoque = Estilos.criar_card_cabecalho(
-            self.frame_cards,
-            "⚠️ ESTOQUE BAIXO",
-            estoque_valor,
-            "produtos críticos",
-            Estilos.COR_PRIMARIA,
-            largura=280,
-            altura=130
-        )
-        self.card_estoque.grid(row=0, column=1, padx=15, pady=5, sticky='nsew')
+        # Efeito hover
+        def on_enter(e):
+            frame.config(highlightbackground=Estilos.COR_PRIMARIA, highlightthickness=2)
         
-        # Card 3 - Mais Vendido
-        self.card_mais_vendido = Estilos.criar_card_cabecalho(
-            self.frame_cards,
-            "🔥 MAIS VENDIDO",
-            mais_vendido,
-            "item do dia",
-            Estilos.COR_PRIMARIA,
-            largura=280,
-            altura=130
+        def on_leave(e):
+            frame.config(highlightbackground=Estilos.COR_BORDA, highlightthickness=1)
+        
+        frame.bind('<Enter>', on_enter)
+        frame.bind('<Leave>', on_leave)
+        
+        # Conteúdo
+        conteudo = tk.Frame(frame, bg='white', padx=15, pady=15)
+        conteudo.pack(fill='both', expand=True)
+        
+        tk.Label(
+            conteudo,
+            text=titulo,
+            font=("Arial", 16, "bold"),
+            fg=Estilos.COR_TEXTO,
+            bg='white'
+        ).pack(anchor='w')
+        
+        tk.Label(
+            conteudo,
+            text=subtitulo,
+            font=("Arial", 11),
+            fg=Estilos.COR_TEXTO_SECUNDARIO,
+            bg='white'
+        ).pack(anchor='w', pady=(5, 10))
+        
+        # Botão no estilo "ADICIONAR"
+        btn_frame, btn = Estilos.criar_botao_moderno(
+            conteudo,
+            "Acessar",
+            comando,
+            tipo=tipo
         )
-        self.card_mais_vendido.grid(row=0, column=2, padx=15, pady=5, sticky='nsew')
+        btn_frame.pack(anchor='w')
+        
+        # Vincular clique no card também
+        def card_click(e):
+            comando()
+        
+        frame.bind('<Button-1>', card_click)
+        conteudo.bind('<Button-1>', card_click)
+        for child in conteudo.winfo_children():
+            child.bind('<Button-1>', card_click)
     
     def atualizar_cards(self):
-        """Atualiza os dados dos cards"""
-        print("🔄 Atualizando cards do menu...")  # Debug
+        """Atualiza os cards com dados reais"""
+        print("🔄 Atualizando cards do menu...")
         
-        vendas_valor, vendas_unidade = self.calcular_vendas_dia()
-        estoque_valor = self.calcular_estoque_baixo()
+        vendas_count, vendas_total = self.calcular_vendas_dia()
+        estoque_baixo = self.calcular_estoque_baixo()
         mais_vendido = self.calcular_mais_vendidos()
         
-        # Atualizar cada card individualmente (mais eficiente que recriar)
-        self.atualizar_card(self.card_vendas, vendas_valor, vendas_unidade)
-        self.atualizar_card(self.card_estoque, estoque_valor, "produtos críticos")
-        self.atualizar_card(self.card_mais_vendido, mais_vendido, "item do dia")
+        print(f"📊 Vendas: {vendas_count} - {vendas_total}")
+        print(f"⚠️ Estoque baixo: {estoque_baixo}")
+        print(f"🔥 Mais vendido: {mais_vendido}")
+        
+        # Atualizar card de vendas
+        self.atualizar_card(self.cards['vendas'], vendas_count, f"Total: {vendas_total}")
+        
+        # Atualizar card de estoque
+        self.atualizar_card(self.cards['estoque'], estoque_baixo, "produtos críticos")
+        
+        # Atualizar card de mais vendido
+        self.atualizar_card(self.cards['top'], mais_vendido, "item do dia")
         
         print("✅ Cards atualizados!")
     
-    def atualizar_card(self, card, novo_valor, nova_unidade):
-        """Atualiza os valores de um card específico"""
+    def atualizar_card(self, card, novo_valor, novo_subtitulo):
+        """Atualiza os valores de um card"""
         if not card:
+            print("❌ Card não encontrado!")
             return
         
-        # Encontrar os labels dentro do card
-        for widget in card.winfo_children():
-            if isinstance(widget, tk.Frame):  # Frame do conteúdo
-                for child in widget.winfo_children():
-                    if isinstance(child, tk.Label):
-                        if child.cget('font')[1] == 22:  # Label do valor (fonte 22)
-                            child.config(text=str(novo_valor))
-                        elif child.cget('font')[1] == 9:  # Label da unidade (fonte 9)
-                            child.config(text=nova_unidade)
+        try:
+            # Procura pela estrutura do card moderno
+            # card -> frame_icone (right) e frame_info (left)
+            for widget in card.winfo_children():
+                if isinstance(widget, tk.Frame):
+                    # Verifica se é o frame_info (tem vários labels)
+                    if widget.winfo_children():
+                        for child in widget.winfo_children():
+                            if isinstance(child, tk.Label):
+                                # Label do valor (fonte 20)
+                                if child.cget('font')[1] == 20:
+                                    child.config(text=str(novo_valor))
+                                    print(f"✅ Valor atualizado para: {novo_valor}")
+                                # Label do subtítulo (fonte 9)
+                                elif child.cget('font')[1] == 9:
+                                    child.config(text=novo_subtitulo)
+                                    print(f"✅ Subtítulo atualizado para: {novo_subtitulo}")
+        except Exception as e:
+            print(f"❌ Erro ao atualizar card: {e}")
     
     def calcular_vendas_dia(self):
         """Calcula o total de vendas do dia"""
@@ -253,9 +262,10 @@ class TelaMenu:
             count = resultado[0] or 0
             total = resultado[1] or 0
             
+            print(f"📊 Vendas encontradas: {count} - R$ {total:.2f}")
             return str(count), f"R$ {total:.2f}"
         except Exception as e:
-            print(f"Erro ao calcular vendas: {e}")
+            print(f"❌ Erro ao calcular vendas: {e}")
             return "0", "R$ 0,00"
     
     def calcular_estoque_baixo(self):
@@ -265,9 +275,10 @@ class TelaMenu:
                 SELECT COUNT(*) FROM produtos WHERE quantidade < 5
             ''')
             count = self.db.cursor.fetchone()[0] or 0
+            print(f"⚠️ Produtos com estoque baixo: {count}")
             return str(count)
         except Exception as e:
-            print(f"Erro ao calcular estoque baixo: {e}")
+            print(f"❌ Erro ao calcular estoque baixo: {e}")
             return "0"
     
     def calcular_mais_vendidos(self):
@@ -285,21 +296,23 @@ class TelaMenu:
             ''', (hoje,))
             
             resultado = self.db.cursor.fetchone()
-            if resultado:
+            if resultado and resultado[0]:
                 nome = resultado[0]
-                return nome[:20] + "..." if len(nome) > 20 else nome
+                print(f"🔥 Produto mais vendido: {nome}")
+                return nome[:15] + "..." if len(nome) > 15 else nome
             else:
+                print("📭 Nenhuma venda hoje")
                 return "Nenhuma venda"
         except Exception as e:
-            print(f"Erro ao calcular mais vendido: {e}")
-            return "Carregando..."
+            print(f"❌ Erro ao calcular mais vendido: {e}")
+            return "Erro"
     
     def abrir_cadastro(self):
         from cadastro_produto import TelaCadastro
         self.janela.withdraw()
         tela = TelaCadastro(self.janela)
-        self.janela.wait_window(tela.janela)  # Aguarda a tela fechar
-        self.atualizar_cards()  # Atualiza quando voltar
+        self.janela.wait_window(tela.janela)
+        self.atualizar_cards()
         self.janela.deiconify()
     
     def abrir_consulta(self):
@@ -315,7 +328,7 @@ class TelaMenu:
         self.janela.withdraw()
         tela = TelaVenda(self.janela)
         self.janela.wait_window(tela.janela)
-        self.atualizar_cards()  # Atualiza após a venda
+        self.atualizar_cards()
         self.janela.deiconify()
     
     def abrir_clientes(self):

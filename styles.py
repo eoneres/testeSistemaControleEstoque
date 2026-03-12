@@ -1,74 +1,26 @@
-# styles.py - Estilos compartilhados para todo o sistema
+# styles.py - Estilos compartilhados para todo o sistema (versão unificada)
 import tkinter as tk
 from tkinter import ttk
 
 class Estilos:
-    # Cores padrão
-    COR_PRIMARIA = '#ff751f'
-    COR_BOTAO = '#ffffff'
-    COR_TEXTO_BOTAO = '#ff751f'
-    COR_SOMBRA = '#e65c00'
-    COR_FUNDO = '#ff751f'
-    COR_FUNDO_CONTEUDO = '#ffffff'
+    # Cores base
+    COR_PRIMARIA = '#ff751f'      # Laranja (destaque)
+    COR_SECUNDARIA = '#f5f5f5'     # Cinza muito claro (fundo de cards)
+    COR_FUNDO = '#ffffff'           # Branco
+    COR_TEXTO = '#333333'           # Cinza escuro para texto
+    COR_TEXTO_SECUNDARIO = '#666666' # Cinza médio
+    COR_BORDA = '#e0e0e0'           # Cinza claro para bordas
+    COR_SUCESSO = '#28a745'         # Verde
+    COR_PERIGO = '#dc3545'          # Vermelho
+    COR_ALERTA = '#ffc107'          # Amarelo
     
     @staticmethod
-    def criar_botao_arredondado(parent, texto, comando, cor_fundo='#ffffff', cor_texto='#ff751f', 
-                                largura=20, altura=2, icone=""):
-        """Cria um botão com cantos arredondados e sombra no hover"""
-        
-        frame_btn = tk.Frame(parent, bg=parent['bg'], highlightthickness=0)
-        
-        btn_texto = f"{icone} {texto}" if icone else texto
-        
-        btn = tk.Button(
-            frame_btn,
-            text=btn_texto,
-            font=("Arial", 11, "bold"),
-            bg=cor_fundo,
-            fg=cor_texto,
-            bd=2,
-            relief='solid',
-            padx=20,
-            pady=10,
-            cursor='hand2',
-            command=comando,
-            width=largura,
-            height=altura,
-            highlightbackground='#dddddd',
-            highlightthickness=1,
-            activebackground='#f0f0f0',
-            activeforeground=cor_texto
-        )
-        btn.pack()
-        
-        def on_enter(e):
-            btn.config(
-                relief='raised',
-                bd=3,
-                bg='#f5f5f5',
-                fg=Estilos.COR_SOMBRA
-            )
-        
-        def on_leave(e):
-            btn.config(
-                relief='solid',
-                bd=2,
-                bg=cor_fundo,
-                fg=cor_texto
-            )
-        
-        btn.bind('<Enter>', on_enter)
-        btn.bind('<Leave>', on_leave)
-        
-        return frame_btn, btn
-    
-    @staticmethod
-    def criar_card_cabecalho(parent, texto, valor, unidade, cor, largura=280, altura=130):
-        """Cria um card estilizado para cabeçalho com tamanho adequado"""
+    def criar_card_moderno(parent, titulo, valor, subtitulo, icone, largura=280, altura=120):
+        """Cria um card no estilo moderno (como na imagem)"""
         card = tk.Frame(
             parent,
             bg='white',
-            highlightbackground='#e0e0e0',
+            highlightbackground=Estilos.COR_BORDA,
             highlightthickness=1,
             bd=0,
             width=largura,
@@ -76,52 +28,158 @@ class Estilos:
         )
         card.pack_propagate(False)
         
+        # Efeito hover sutil
         def on_enter(e):
             card.config(highlightbackground=Estilos.COR_PRIMARIA, highlightthickness=2)
         
         def on_leave(e):
-            card.config(highlightbackground='#e0e0e0', highlightthickness=1)
+            card.config(highlightbackground=Estilos.COR_BORDA, highlightthickness=1)
         
         card.bind('<Enter>', on_enter)
         card.bind('<Leave>', on_leave)
         
-        conteudo = tk.Frame(card, bg='white', padx=15, pady=10)
-        conteudo.pack(fill='both', expand=True)
+        # Layout do card (informações à esquerda, ícone à direita como na imagem)
+        frame_info = tk.Frame(card, bg='white', padx=15, pady=10)
+        frame_info.pack(side='left', fill='both', expand=True)
         
-        # Título
-        lbl_titulo = tk.Label(
-            conteudo,
-            text=texto,
-            font=("Arial", 11, "bold"),
-            fg='#666666',
-            bg='white',
-            anchor='w'
-        )
-        lbl_titulo.pack(anchor='w', fill='x')
-        
-        # Valor principal
-        lbl_valor = tk.Label(
-            conteudo,
-            text=str(valor),
-            font=("Arial", 26, "bold"),
-            fg=cor,
-            bg='white',
-            anchor='w'
-        )
-        lbl_valor.pack(anchor='w', pady=(5, 2))
-        
-        # Unidade
-        lbl_unidade = tk.Label(
-            conteudo,
-            text=unidade,
+        tk.Label(
+            frame_info,
+            text=titulo,
             font=("Arial", 10),
+            fg=Estilos.COR_TEXTO_SECUNDARIO,
+            bg='white'
+        ).pack(anchor='w')
+        
+        tk.Label(
+            frame_info,
+            text=valor,
+            font=("Arial", 20, "bold"),
+            fg=Estilos.COR_PRIMARIA,
+            bg='white'
+        ).pack(anchor='w')
+        
+        tk.Label(
+            frame_info,
+            text=subtitulo,
+            font=("Arial", 9),
             fg='#999999',
-            bg='white',
-            anchor='w'
-        )
-        lbl_unidade.pack(anchor='w')
+            bg='white'
+        ).pack(anchor='w')
+        
+        frame_icone = tk.Frame(card, bg='white', width=50)
+        frame_icone.pack(side='right', fill='y', padx=(0, 15))
+        
+        tk.Label(
+            frame_icone,
+            text=icone,
+            font=("Arial", 28),
+            fg=Estilos.COR_PRIMARIA,
+            bg='white'
+        ).pack(expand=True)
         
         return card
+    
+    @staticmethod
+    def criar_botao_moderno(parent, texto, comando, tipo='primario', icone=""):
+        """Cria botões no estilo moderno"""
+        frame_btn = tk.Frame(parent, bg=parent['bg'] if parent else '#f5f5f5')
+        
+        cores = {
+            'primario': {'bg': Estilos.COR_PRIMARIA, 'fg': 'white', 'hover': '#e65c00'},
+            'secundario': {'bg': 'white', 'fg': Estilos.COR_PRIMARIA, 'hover': '#f5f5f5'},
+            'perigo': {'bg': Estilos.COR_PERIGO, 'fg': 'white', 'hover': '#c82333'},
+            'sucesso': {'bg': Estilos.COR_SUCESSO, 'fg': 'white', 'hover': '#218838'}
+        }
+        
+        cor = cores.get(tipo, cores['primario'])
+        
+        btn_texto = f"{icone} {texto}" if icone else texto
+        
+        btn = tk.Button(
+            frame_btn,
+            text=btn_texto,
+            font=("Arial", 11, "bold"),
+            bg=cor['bg'],
+            fg=cor['fg'],
+            bd=0,
+            padx=20,
+            pady=10,
+            cursor='hand2',
+            command=comando,
+            relief='flat'
+        )
+        btn.pack()
+        
+        def on_enter(e):
+            btn.config(bg=cor['hover'])
+        
+        def on_leave(e):
+            btn.config(bg=cor['bg'])
+        
+        btn.bind('<Enter>', on_enter)
+        btn.bind('<Leave>', on_leave)
+        
+        return frame_btn, btn
+    
+    @staticmethod
+    def criar_campo_personalizado(parent, rotulo, largura=30, mostrar=None):
+        """Cria campo de entrada com rótulo"""
+        frame = tk.Frame(parent, bg='white')
+        frame.pack(fill='x', pady=8)
+        
+        tk.Label(
+            frame,
+            text=rotulo,
+            font=("Arial", 10),
+            fg=Estilos.COR_TEXTO_SECUNDARIO,
+            bg='white'
+        ).pack(anchor='w')
+        
+        entry = tk.Entry(
+            frame,
+            font=("Arial", 11),
+            width=largura,
+            relief='solid',
+            bd=1,
+            highlightbackground=Estilos.COR_BORDA,
+            highlightthickness=1,
+            bg='white',
+            show=mostrar
+        )
+        entry.pack(fill='x', pady=(2, 0), ipady=6)
+        
+        def on_focus_in(e):
+            entry.config(highlightbackground=Estilos.COR_PRIMARIA, highlightthickness=2)
+        
+        def on_focus_out(e):
+            entry.config(highlightbackground=Estilos.COR_BORDA, highlightthickness=1)
+        
+        entry.bind('<FocusIn>', on_focus_in)
+        entry.bind('<FocusOut>', on_focus_out)
+        
+        return entry
+    
+    @staticmethod
+    def criar_secao(parent, titulo):
+        """Cria uma seção com título"""
+        frame = tk.Frame(parent, bg='white')
+        frame.pack(fill='x', pady=10)
+        
+        tk.Label(
+            frame,
+            text=titulo,
+            font=("Arial", 14, "bold"),
+            fg=Estilos.COR_TEXTO,
+            bg='white'
+        ).pack(anchor='w')
+        
+        tk.Frame(
+            frame,
+            height=1,
+            bg=Estilos.COR_BORDA
+        ).pack(fill='x', pady=(5, 10))
+        
+        return frame
     
     @staticmethod
     def aplicar_estilo_tabela(treeview):
@@ -131,14 +189,14 @@ class Estilos:
         
         style.configure("Treeview",
                         background="#ffffff",
-                        foreground="#333333",
+                        foreground=Estilos.COR_TEXTO,
                         rowheight=30,
                         fieldbackground="#ffffff",
                         font=('Arial', 10))
         
         style.configure("Treeview.Heading",
-                        background="#f0f0f0",
-                        foreground="#333333",
+                        background=Estilos.COR_SECUNDARIA,
+                        foreground=Estilos.COR_TEXTO,
                         font=('Arial', 10, 'bold'))
         
         style.map('Treeview',
@@ -154,12 +212,12 @@ class Estilos:
         style.theme_use('default')
         
         style.configure('TNotebook', 
-                        background=Estilos.COR_FUNDO_CONTEUDO, 
+                        background='#f5f5f5', 
                         borderwidth=0)
         
         style.configure('TNotebook.Tab', 
                         background='#f0f0f0',
-                        foreground='#333333',
+                        foreground=Estilos.COR_TEXTO,
                         padding=[15, 8],
                         font=('Arial', 10),
                         borderwidth=1,
@@ -170,28 +228,3 @@ class Estilos:
                   foreground=[('selected', 'white')])
         
         return notebook
-    
-    @staticmethod
-    def criar_entry_estilizado(parent, largura=30, mostrar=None):
-        """Cria um campo de entrada estilizado"""
-        entry = tk.Entry(
-            parent,
-            font=("Arial", 10),
-            width=largura,
-            relief='solid',
-            bd=1,
-            highlightbackground='#dddddd',
-            highlightthickness=1,
-            show=mostrar
-        )
-        
-        def on_focus_in(e):
-            entry.config(highlightbackground=Estilos.COR_PRIMARIA, highlightthickness=2)
-        
-        def on_focus_out(e):
-            entry.config(highlightbackground='#dddddd', highlightthickness=1)
-        
-        entry.bind('<FocusIn>', on_focus_in)
-        entry.bind('<FocusOut>', on_focus_out)
-        
-        return entry
