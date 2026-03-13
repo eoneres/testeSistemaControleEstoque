@@ -11,9 +11,9 @@ class TelaClientes:
         self.janela.title("StockMaster - Gerenciar Clientes")
         self.janela.geometry("1100x700")
         self.janela.resizable(False, False)
-        self.janela.configure(bg='#ff751f')
+        self.janela.configure(bg='#f5f5f5')  # Fundo cinza claro
         
-        # Cores como atributos da classe
+        # Cores
         self.cor_primaria = '#ff751f'
         self.cor_botao = '#ffffff'
         self.cor_texto_botao = '#ff751f'
@@ -40,31 +40,42 @@ class TelaClientes:
         self.janela.mainloop()
     
     def criar_interface(self):
-        # Frame branco principal
-        frame_conteudo = tk.Frame(self.janela, bg='white', bd=0)
+        # Frame branco principal (card)
+        frame_conteudo = tk.Frame(
+            self.janela,
+            bg='white',
+            highlightbackground='#e0e0e0',
+            highlightthickness=1,
+            bd=0
+        )
         frame_conteudo.pack(expand=True, fill='both', padx=20, pady=20)
         
-        # Título
-        titulo = tk.Label(
-            frame_conteudo,
+        # Cabeçalho
+        frame_cabecalho = tk.Frame(frame_conteudo, bg='white', height=60)
+        frame_cabecalho.pack(fill='x', padx=20, pady=(10, 5))
+        frame_cabecalho.pack_propagate(False)
+        
+        tk.Label(
+            frame_cabecalho,
             text="👥 GERENCIAR CLIENTES",
-            font=("Arial", 20, "bold"),
+            font=("Arial", 22, "bold"),
             fg=self.cor_primaria,
             bg='white'
-        )
-        titulo.pack(pady=20)
+        ).pack(side='left', padx=10)
+        
+        # Data atual
+        data_atual = datetime.now().strftime("%d/%m/%Y")
+        tk.Label(
+            frame_cabecalho,
+            text=f"📅 {data_atual}",
+            font=("Arial", 11),
+            fg='#666666',
+            bg='white'
+        ).pack(side='right', padx=10)
         
         # Notebook (abas)
         self.notebook = ttk.Notebook(frame_conteudo)
         self.notebook.pack(fill='both', expand=True, padx=10, pady=10)
-        
-        # Estilo do Notebook
-        style = ttk.Style()
-        style.theme_use('default')
-        style.configure('TNotebook', background='white')
-        style.configure('TNotebook.Tab', background='#f0f0f0', padding=[10, 5], font=('Arial', 10))
-        style.map('TNotebook.Tab', background=[('selected', self.cor_primaria)], 
-                  foreground=[('selected', 'white')])
         
         # ABA 1: Lista de Clientes
         frame_lista = ttk.Frame(self.notebook)
@@ -80,22 +91,46 @@ class TelaClientes:
         frame_blacklist = ttk.Frame(self.notebook)
         self.notebook.add(frame_blacklist, text="🚫 Blacklist")
         self.criar_aba_blacklist(frame_blacklist)
+        
+        # Botão Voltar
+        frame_rodape = tk.Frame(frame_conteudo, bg='white', height=50)
+        frame_rodape.pack(fill='x', padx=20, pady=10)
+        frame_rodape.pack_propagate(False)
+        
+        btn_voltar = tk.Button(
+            frame_rodape,
+            text="↩️ Voltar ao Menu",
+            font=("Arial", 11, "bold"),
+            bg='white',
+            fg=self.cor_primaria,
+            bd=1,
+            relief='solid',
+            padx=20,
+            pady=8,
+            cursor='hand2',
+            command=self.voltar
+        )
+        btn_voltar.pack(side='right')
+        
+        def on_enter_voltar(e):
+            btn_voltar.config(bg='#f5f5f5', fg=self.cor_sombra)
+        
+        def on_leave_voltar(e):
+            btn_voltar.config(bg='white', fg=self.cor_primaria)
+        
+        btn_voltar.bind('<Enter>', on_enter_voltar)
+        btn_voltar.bind('<Leave>', on_leave_voltar)
     
     def criar_aba_lista(self, parent):
-        # Cores
-        cor_primaria = self.cor_primaria
-        cor_botao = self.cor_botao
-        cor_texto_botao = self.cor_texto_botao
-        
         # Frame de busca
-        frame_busca = tk.Frame(parent, bg='#f8f8f8', padx=10, pady=10)
+        frame_busca = tk.Frame(parent, bg='#f8f9fa', padx=15, pady=10)
         frame_busca.pack(fill='x', padx=10, pady=10)
         
         tk.Label(
             frame_busca,
             text="🔍 Buscar:",
-            font=("Arial", 10),
-            bg='#f8f8f8',
+            font=("Arial", 10, "bold"),
+            bg='#f8f9fa',
             fg='#333333'
         ).pack(side='left', padx=(0, 10))
         
@@ -107,7 +142,7 @@ class TelaClientes:
             bd=1,
             highlightbackground='#dddddd'
         )
-        self.busca_entry.pack(side='left', padx=(0, 10), ipady=3)
+        self.busca_entry.pack(side='left', padx=(0, 10), ipady=5)
         
         self.filtro_var = tk.StringVar(value="nome")
         filtros = [("Nome", "nome"), ("CPF", "cpf"), ("Telefone", "telefone")]
@@ -118,7 +153,7 @@ class TelaClientes:
                 text=texto,
                 variable=self.filtro_var,
                 value=valor,
-                bg='#f8f8f8',
+                bg='#f8f9fa',
                 fg='#333333',
                 font=("Arial", 9),
                 cursor='hand2'
@@ -128,13 +163,13 @@ class TelaClientes:
         btn_buscar = tk.Button(
             frame_busca,
             text="🔍 BUSCAR",
-            bg=cor_botao,
-            fg=cor_texto_botao,
+            bg='white',
+            fg=self.cor_primaria,
             font=("Arial", 9, "bold"),
             bd=1,
             relief='solid',
-            padx=10,
-            pady=3,
+            padx=15,
+            pady=5,
             cursor='hand2',
             command=self.buscar_clientes
         )
@@ -143,13 +178,13 @@ class TelaClientes:
         btn_limpar = tk.Button(
             frame_busca,
             text="✖ LIMPAR",
-            bg=cor_botao,
-            fg=cor_texto_botao,
+            bg='white',
+            fg=self.cor_primaria,
             font=("Arial", 9, "bold"),
             bd=1,
             relief='solid',
-            padx=10,
-            pady=3,
+            padx=15,
+            pady=5,
             cursor='hand2',
             command=self.limpar_busca
         )
@@ -157,7 +192,7 @@ class TelaClientes:
         
         # Frame da tabela
         frame_tabela = tk.Frame(parent, bg='white')
-        frame_tabela.pack(fill='both', expand=True, padx=10, pady=10)
+        frame_tabela.pack(fill='both', expand=True, padx=10, pady=5)
         
         # Scrollbars
         scroll_y = tk.Scrollbar(frame_tabela)
@@ -192,44 +227,42 @@ class TelaClientes:
         self.tree_clientes.tag_configure('bloqueado', background='#ffe5e5')
         self.tree_clientes.tag_configure('inativo', background='#fff3e0')
         
-        # Bind para duplo clique (ver detalhes)
+        # Bind para duplo clique
         self.tree_clientes.bind('<Double-1>', self.ver_detalhes_cliente)
         
-        # Frame de botões
-        frame_botoes = tk.Frame(parent, bg='white', pady=10)
-        frame_botoes.pack(fill='x')
+        # Frame de botões de ação
+        frame_acoes = tk.Frame(parent, bg='white', pady=10)
+        frame_acoes.pack(fill='x', padx=10)
         
         botoes = [
-            ("➕ NOVO CLIENTE", self.novo_cliente),
-            ("📋 VER DETALHES", self.ver_detalhes),
-            ("✏️ EDITAR", self.editar_cliente),
-            ("📊 HISTÓRICO", self.ver_historico_compras),
-            ("🚫 BLOQUEAR", self.bloquear_cliente)
+            ("➕ NOVO", self.novo_cliente, self.cor_primaria),
+            ("📋 DETALHES", self.ver_detalhes, self.cor_primaria),
+            ("✏️ EDITAR", self.editar_cliente, '#ff9800'),
+            ("📊 HISTÓRICO", self.ver_historico_compras, '#9c27b0'),
+            ("🚫 BLOQUEAR", self.bloquear_cliente, '#f44336')
         ]
         
-        for texto, comando in botoes:
+        for texto, comando, cor in botoes:
             btn = tk.Button(
-                frame_botoes,
+                frame_acoes,
                 text=texto,
                 font=("Arial", 10, "bold"),
-                bg=cor_botao,
-                fg=cor_texto_botao,
+                bg='white',
+                fg=cor,
                 bd=1,
                 relief='solid',
                 padx=15,
-                pady=5,
+                pady=6,
                 cursor='hand2',
                 command=comando
             )
             btn.pack(side='left', padx=5, expand=True, fill='x')
             
-            def on_enter(e, b=btn):
-                b['bg'] = '#f5f5f5'
-                b['fg'] = self.cor_sombra
+            def on_enter(e, b=btn, c=cor):
+                b.config(bg='#f5f5f5', fg=c)
             
-            def on_leave(e, b=btn):
-                b['bg'] = cor_botao
-                b['fg'] = cor_texto_botao
+            def on_leave(e, b=btn, c=cor):
+                b.config(bg='white', fg=c)
             
             btn.bind('<Enter>', on_enter)
             btn.bind('<Leave>', on_leave)
@@ -255,16 +288,16 @@ class TelaClientes:
         self.titulo_cadastro = tk.Label(
             frame,
             text="CADASTRO DE CLIENTE",
-            font=("Arial", 16, "bold"),
+            font=("Arial", 18, "bold"),
             fg=self.cor_primaria,
             bg='white'
         )
-        self.titulo_cadastro.pack(pady=20)
+        self.titulo_cadastro.pack(pady=10)
         
         # Subtítulo
         tk.Label(
             frame,
-            text="Preencha os dados do cliente (* campos obrigatórios)",
+            text="Preencha os campos obrigatórios (*)",
             font=("Arial", 10, "italic"),
             fg='#666666',
             bg='white'
@@ -295,13 +328,12 @@ class TelaClientes:
         
         self.btn_salvar = tk.Button(
             frame_botoes,
-            text="💾 SALVAR CLIENTE",
+            text="✅ SALVAR CLIENTE",
             font=("Arial", 12, "bold"),
-            bg=self.cor_botao,
-            fg=self.cor_texto_botao,
-            bd=1,
-            relief='solid',
-            padx=30,
+            bg=self.cor_primaria,
+            fg='white',
+            bd=0,
+            padx=25,
             pady=10,
             cursor='hand2',
             command=self.salvar_cliente
@@ -312,11 +344,11 @@ class TelaClientes:
             frame_botoes,
             text="🔄 LIMPAR",
             font=("Arial", 12, "bold"),
-            bg=self.cor_botao,
-            fg=self.cor_texto_botao,
+            bg='#f5f5f5',
+            fg='#666666',
             bd=1,
             relief='solid',
-            padx=30,
+            padx=25,
             pady=10,
             cursor='hand2',
             command=self.limpar_cadastro
@@ -327,11 +359,11 @@ class TelaClientes:
             frame_botoes,
             text="↩️ CANCELAR",
             font=("Arial", 12, "bold"),
-            bg=self.cor_botao,
-            fg=self.cor_texto_botao,
+            bg='#f5f5f5',
+            fg='#666666',
             bd=1,
             relief='solid',
-            padx=30,
+            padx=25,
             pady=10,
             cursor='hand2',
             command=self.cancelar_edicao
@@ -339,14 +371,21 @@ class TelaClientes:
         btn_cancelar.pack(side='left', padx=5, expand=True, fill='x')
         
         # Efeito hover nos botões
-        for btn in [self.btn_salvar, btn_limpar, btn_cancelar]:
+        def on_enter_salvar(e):
+            self.btn_salvar.config(bg=self.cor_sombra)
+        
+        def on_leave_salvar(e):
+            self.btn_salvar.config(bg=self.cor_primaria)
+        
+        self.btn_salvar.bind('<Enter>', on_enter_salvar)
+        self.btn_salvar.bind('<Leave>', on_leave_salvar)
+        
+        for btn in [btn_limpar, btn_cancelar]:
             def on_enter(e, b=btn):
-                b['bg'] = '#f5f5f5'
-                b['fg'] = self.cor_sombra
+                b.config(bg='#e0e0e0')
             
             def on_leave(e, b=btn):
-                b['bg'] = self.cor_botao
-                b['fg'] = self.cor_texto_botao
+                b.config(bg='#f5f5f5')
             
             btn.bind('<Enter>', on_enter)
             btn.bind('<Leave>', on_leave)
@@ -362,7 +401,7 @@ class TelaClientes:
         for i in range(3):
             frame.columnconfigure(i, weight=1)
         
-        # Linha 0: Nome Completo
+        # Linha 0-1: Nome Completo
         tk.Label(
             frame,
             text="Nome Completo:*",
@@ -398,7 +437,7 @@ class TelaClientes:
         )
         self.entries["cpf"].grid(row=1, column=2, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Linha 2: RG
+        # Linha 2-3: RG
         tk.Label(
             frame,
             text="RG:",
@@ -434,24 +473,23 @@ class TelaClientes:
         )
         self.entries["data_nascimento"].grid(row=3, column=1, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Gênero
         tk.Label(
             frame,
-            text="Gênero:",
+            text="Sexo:",
             font=("Arial", 10, "bold"),
             fg='#333333',
             bg='white'
         ).grid(row=2, column=2, sticky='w', padx=5, pady=(10, 2))
         
-        self.entries["gênero"] = ttk.Combobox(
+        self.entries["sexo"] = ttk.Combobox(
             frame,
             values=["Masculino", "Feminino", "Outro"],
             state='readonly',
             font=("Arial", 10)
         )
-        self.entries["gênero"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=5)
+        self.entries["sexo"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Linha 4: E-mail
+        # Linha 4-5: E-mail
         tk.Label(
             frame,
             text="E-mail:",
@@ -469,7 +507,7 @@ class TelaClientes:
         )
         self.entries["email"].grid(row=5, column=0, columnspan=3, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Linha 6: Telefone Fixo
+        # Linha 6-7: Telefone Fixo
         tk.Label(
             frame,
             text="Telefone Fixo:*",
@@ -513,7 +551,7 @@ class TelaClientes:
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         
-        # Linha 0: CEP
+        # Linha 0-1: CEP
         tk.Label(
             frame,
             text="CEP:",
@@ -568,7 +606,7 @@ class TelaClientes:
         )
         self.entries["numero"].grid(row=1, column=3, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Linha 2: Complemento
+        # Linha 2-3: Complemento
         tk.Label(
             frame,
             text="Complemento:",
@@ -604,7 +642,7 @@ class TelaClientes:
         )
         self.entries["bairro"].grid(row=3, column=2, columnspan=2, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Linha 4: Cidade
+        # Linha 4-5: Cidade
         tk.Label(
             frame,
             text="Cidade:*",
@@ -655,7 +693,7 @@ class TelaClientes:
         
         self.entries["observacoes"] = tk.Text(
             frame,
-            height=8,
+            height=6,
             font=("Arial", 10),
             relief='solid',
             bd=1,
@@ -701,8 +739,8 @@ class TelaClientes:
             frame_botoes,
             text="🔓 DESBLOQUEAR SELECIONADO",
             font=("Arial", 10, "bold"),
-            bg=self.cor_botao,
-            fg=self.cor_texto_botao,
+            bg='white',
+            fg=self.cor_primaria,
             bd=1,
             relief='solid',
             padx=20,
@@ -710,15 +748,13 @@ class TelaClientes:
             cursor='hand2',
             command=self.desbloquear_cliente
         )
-        btn_desbloquear.pack(pady=5)
+        btn_desbloquear.pack()
         
         def on_enter(e):
-            btn_desbloquear['bg'] = '#f5f5f5'
-            btn_desbloquear['fg'] = self.cor_sombra
+            btn_desbloquear.config(bg='#f5f5f5', fg=self.cor_sombra)
         
         def on_leave(e):
-            btn_desbloquear['bg'] = self.cor_botao
-            btn_desbloquear['fg'] = self.cor_texto_botao
+            btn_desbloquear.config(bg='white', fg=self.cor_primaria)
         
         btn_desbloquear.bind('<Enter>', on_enter)
         btn_desbloquear.bind('<Leave>', on_leave)
@@ -824,7 +860,7 @@ class TelaClientes:
         self.cliente_atual = None
         self.limpar_cadastro()
         self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
-        self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
+        self.btn_salvar.config(text="✅ SALVAR CLIENTE", command=self.salvar_cliente)
         self.notebook.select(1)
     
     def editar_cliente(self):
@@ -851,7 +887,7 @@ class TelaClientes:
                 self.entries["celular"].insert(0, cliente[6] or "")
                 self.entries["email"].insert(0, cliente[7] or "")
                 self.entries["data_nascimento"].insert(0, cliente[8] or "")
-                self.entries["gênero"].set(cliente[9] or "")
+                self.entries["sexo"].set(cliente[9] or "")  # CORRIGIDO: sexo
                 self.entries["endereco"].insert(0, cliente[10])
                 self.entries["numero"].insert(0, cliente[11] or "")
                 self.entries["complemento"].insert(0, cliente[12] or "")
@@ -863,7 +899,7 @@ class TelaClientes:
                 
                 # Mudar título e botão
                 self.titulo_cadastro.config(text="EDITAR CLIENTE")
-                self.btn_salvar.config(text="💾 ATUALIZAR CLIENTE", command=self.atualizar_cliente)
+                self.btn_salvar.config(text="✅ ATUALIZAR CLIENTE", command=self.atualizar_cliente)
                 
                 # Ir para aba de edição
                 self.notebook.select(1)
@@ -876,7 +912,7 @@ class TelaClientes:
         self.cliente_atual = None
         self.limpar_cadastro()
         self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
-        self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
+        self.btn_salvar.config(text="✅ SALVAR CLIENTE", command=self.salvar_cliente)
         self.notebook.select(0)
     
     def limpar_cadastro(self):
@@ -906,7 +942,7 @@ class TelaClientes:
             celular = self.entries["celular"].get().strip()
             email = self.entries["email"].get().strip()
             data_nascimento = self.entries["data_nascimento"].get().strip()
-            genero = self.entries["gênero"].get().strip()
+            sexo = self.entries["sexo"].get().strip()  # CORRIGIDO: sexo (não gênero)
             numero = self.entries["numero"].get().strip()
             complemento = self.entries["complemento"].get().strip()
             cep = self.entries["cep"].get().strip()
@@ -946,15 +982,15 @@ class TelaClientes:
             # Gerar código do cliente
             codigo = self.db.gerar_codigo_cliente()
             
-            # Inserir no banco
+            # Inserir no banco - CORRIGIDO: usando 'sexo' (não 'gênero')
             self.db.cursor.execute('''
                 INSERT INTO clientes (
                     codigo, nome, cpf, rg, telefone, celular, email,
-                    data_nascimento, gênero, endereco, numero, complemento,
+                    data_nascimento, sexo, endereco, numero, complemento,
                     bairro, cidade, estado, cep, data_cadastro, observacoes
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (codigo, nome, cpf_limpo, rg, telefone, celular, email,
-                  data_nascimento, genero, endereco, numero, complemento,
+                  data_nascimento, sexo, endereco, numero, complemento,
                   bairro, cidade, estado, cep, datetime.now().strftime("%d/%m/%Y"),
                   observacoes))
             
@@ -995,7 +1031,7 @@ class TelaClientes:
             celular = self.entries["celular"].get().strip()
             email = self.entries["email"].get().strip()
             data_nascimento = self.entries["data_nascimento"].get().strip()
-            genero = self.entries["gênero"].get().strip()
+            sexo = self.entries["sexo"].get().strip()  # CORRIGIDO: sexo
             numero = self.entries["numero"].get().strip()
             complemento = self.entries["complemento"].get().strip()
             cep = self.entries["cep"].get().strip()
@@ -1022,15 +1058,14 @@ class TelaClientes:
                 messagebox.showerror("Erro", "CPF já cadastrado para outro cliente!")
                 return
             
-            # Atualizar no banco
             self.db.cursor.execute('''
                 UPDATE clientes SET
                     nome = ?, cpf = ?, rg = ?, telefone = ?, celular = ?, email = ?,
-                    data_nascimento = ?, gênero = ?, endereco = ?, numero = ?, complemento = ?,
+                    data_nascimento = ?, sexo = ?, endereco = ?, numero = ?, complemento = ?,
                     bairro = ?, cidade = ?, estado = ?, cep = ?, observacoes = ?
                 WHERE codigo = ?
             ''', (nome, cpf_limpo, rg, telefone, celular, email,
-                  data_nascimento, genero, endereco, numero, complemento,
+                  data_nascimento, sexo, endereco, numero, complemento,
                   bairro, cidade, estado, cep, observacoes,
                   self.cliente_atual[1]))
             
@@ -1046,7 +1081,7 @@ class TelaClientes:
             
             # Resetar formulário e voltar para lista
             self.titulo_cadastro.config(text="CADASTRO DE CLIENTE")
-            self.btn_salvar.config(text="💾 SALVAR CLIENTE", command=self.salvar_cliente)
+            self.btn_salvar.config(text="✅ SALVAR CLIENTE", command=self.salvar_cliente)
             self.notebook.select(0)
             
         except Exception as e:
@@ -1086,7 +1121,7 @@ class TelaClientes:
 ║ Celular: {cliente[6] or '---'}                              
 ║ E-mail: {cliente[7] or '---'}                               
 ║ Data Nasc.: {cliente[8] or '---'}                           
-║ Gênero: {cliente[9] or '---'}                                 
+║ Sexo: {cliente[9] or '---'}                                 
 ╠════════════════════════════════════════════════════════════╣
 ║                    ENDEREÇO                                 ║
 ╠════════════════════════════════════════════════════════════╣
@@ -1106,11 +1141,9 @@ class TelaClientes:
                 
                 # Centralizar
                 detalhes_janela.update_idletasks()
-                largura = 600
-                altura = 500
-                x = (detalhes_janela.winfo_screenwidth() // 2) - (largura // 2)
-                y = (detalhes_janela.winfo_screenheight() // 2) - (altura // 2)
-                detalhes_janela.geometry(f'{largura}x{altura}+{x}+{y}')
+                x = (detalhes_janela.winfo_screenwidth() // 2) - (600 // 2)
+                y = (detalhes_janela.winfo_screenheight() // 2) - (500 // 2)
+                detalhes_janela.geometry(f'{600}x{500}+{x}+{y}')
                 
                 # Área de texto
                 texto = tk.Text(
@@ -1131,8 +1164,8 @@ class TelaClientes:
                     detalhes_janela,
                     text="FECHAR",
                     font=("Arial", 10, "bold"),
-                    bg=self.cor_botao,
-                    fg=self.cor_texto_botao,
+                    bg='white',
+                    fg=self.cor_primaria,
                     bd=1,
                     relief='solid',
                     padx=20,
@@ -1143,12 +1176,10 @@ class TelaClientes:
                 btn_fechar.pack(pady=10)
                 
                 def on_enter(e):
-                    btn_fechar['bg'] = '#f5f5f5'
-                    btn_fechar['fg'] = self.cor_sombra
+                    btn_fechar.config(bg='#f5f5f5', fg=self.cor_sombra)
                 
                 def on_leave(e):
-                    btn_fechar['bg'] = self.cor_botao
-                    btn_fechar['fg'] = self.cor_texto_botao
+                    btn_fechar.config(bg='white', fg=self.cor_primaria)
                 
                 btn_fechar.bind('<Enter>', on_enter)
                 btn_fechar.bind('<Leave>', on_leave)
@@ -1187,11 +1218,9 @@ class TelaClientes:
             
             # Centralizar
             hist_janela.update_idletasks()
-            largura = 900
-            altura = 400
-            x = (hist_janela.winfo_screenwidth() // 2) - (largura // 2)
-            y = (hist_janela.winfo_screenheight() // 2) - (altura // 2)
-            hist_janela.geometry(f'{largura}x{altura}+{x}+{y}')
+            x = (hist_janela.winfo_screenwidth() // 2) - (900 // 2)
+            y = (hist_janela.winfo_screenheight() // 2) - (400 // 2)
+            hist_janela.geometry(f'{900}x{400}+{x}+{y}')
             
             # Frame para a tabela
             frame = tk.Frame(hist_janela, bg='white', padx=10, pady=10)
@@ -1231,44 +1260,20 @@ class TelaClientes:
             scroll_x.config(command=tree.xview)
             
             # Inserir dados
-            total_compras = 0
-            total_pontos = 0
-            
             for compra in compras:
                 data, venda_id, produto, qtd, preco, total, pontos = compra
                 tree.insert('', 'end', values=(
                     data, venda_id, produto, qtd, f"R$ {preco:.2f}", 
                     f"R$ {total:.2f}", pontos
                 ))
-                total_compras += total
-                total_pontos += pontos
             
-            # Frame de resumo
-            frame_resumo = tk.Frame(hist_janela, bg='#f8f8f8', pady=10)
-            frame_resumo.pack(fill='x')
-            
-            tk.Label(
-                frame_resumo,
-                text=f"Total em compras: R$ {total_compras:.2f}",
-                font=("Arial", 11, "bold"),
-                bg='#f8f8f8',
-                fg=self.cor_primaria
-            ).pack(side='left', padx=20)
-            
-            tk.Label(
-                frame_resumo,
-                text=f"Total de pontos ganhos: {total_pontos}",
-                font=("Arial", 11, "bold"),
-                bg='#f8f8f8',
-                fg=self.cor_primaria
-            ).pack(side='left', padx=20)
-            
+            # Botão fechar
             btn_fechar = tk.Button(
-                frame_resumo,
+                hist_janela,
                 text="FECHAR",
-                font=("Arial", 10),
-                bg=self.cor_botao,
-                fg=self.cor_texto_botao,
+                font=("Arial", 10, "bold"),
+                bg='white',
+                fg=self.cor_primaria,
                 bd=1,
                 relief='solid',
                 padx=15,
@@ -1276,18 +1281,7 @@ class TelaClientes:
                 cursor='hand2',
                 command=hist_janela.destroy
             )
-            btn_fechar.pack(side='right', padx=20)
-            
-            def on_enter(e):
-                btn_fechar['bg'] = '#f5f5f5'
-                btn_fechar['fg'] = self.cor_sombra
-            
-            def on_leave(e):
-                btn_fechar['bg'] = self.cor_botao
-                btn_fechar['fg'] = self.cor_texto_botao
-            
-            btn_fechar.bind('<Enter>', on_enter)
-            btn_fechar.bind('<Leave>', on_leave)
+            btn_fechar.pack(pady=5)
             
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um cliente para ver o histórico!")
@@ -1304,14 +1298,14 @@ class TelaClientes:
             motivo_janela.title("Bloquear Cliente")
             motivo_janela.geometry("450x300")
             motivo_janela.configure(bg='white')
+            motivo_janela.transient(self.janela)
+            motivo_janela.grab_set()
             
             # Centralizar
             motivo_janela.update_idletasks()
-            largura = 450
-            altura = 300
-            x = (motivo_janela.winfo_screenwidth() // 2) - (largura // 2)
-            y = (motivo_janela.winfo_screenheight() // 2) - (altura // 2)
-            motivo_janela.geometry(f'{largura}x{altura}+{x}+{y}')
+            x = (motivo_janela.winfo_screenwidth() // 2) - (450 // 2)
+            y = (motivo_janela.winfo_screenheight() // 2) - (300 // 2)
+            motivo_janela.geometry(f'{450}x{300}+{x}+{y}')
             
             frame = tk.Frame(motivo_janela, bg='white', padx=20, pady=20)
             frame.pack(fill='both', expand=True)
@@ -1398,6 +1392,7 @@ class TelaClientes:
                 self.carregar_clientes()
                 self.carregar_blacklist()
             
+            # Botões
             frame_botoes = tk.Frame(frame, bg='white', pady=10)
             frame_botoes.pack(fill='x')
             
@@ -1405,10 +1400,9 @@ class TelaClientes:
                 frame_botoes,
                 text="🚫 CONFIRMAR BLOQUEIO",
                 font=("Arial", 11, "bold"),
-                bg=self.cor_botao,
-                fg=self.cor_texto_botao,
-                bd=1,
-                relief='solid',
+                bg='#f44336',
+                fg='white',
+                bd=0,
                 padx=15,
                 pady=8,
                 cursor='hand2',
@@ -1420,8 +1414,8 @@ class TelaClientes:
                 frame_botoes,
                 text="✖ CANCELAR",
                 font=("Arial", 11, "bold"),
-                bg=self.cor_botao,
-                fg=self.cor_texto_botao,
+                bg='#f5f5f5',
+                fg='#666666',
                 bd=1,
                 relief='solid',
                 padx=15,
@@ -1431,17 +1425,23 @@ class TelaClientes:
             )
             btn_cancelar.pack(side='left', padx=5, expand=True, fill='x')
             
-            for btn in [btn_confirmar, btn_cancelar]:
-                def on_enter(e, b=btn):
-                    b['bg'] = '#f5f5f5'
-                    b['fg'] = self.cor_sombra
-                
-                def on_leave(e, b=btn):
-                    b['bg'] = self.cor_botao
-                    b['fg'] = self.cor_texto_botao
-                
-                btn.bind('<Enter>', on_enter)
-                btn.bind('<Leave>', on_leave)
+            def on_enter_confirmar(e):
+                btn_confirmar.config(bg='#d32f2f')
+            
+            def on_leave_confirmar(e):
+                btn_confirmar.config(bg='#f44336')
+            
+            btn_confirmar.bind('<Enter>', on_enter_confirmar)
+            btn_confirmar.bind('<Leave>', on_leave_confirmar)
+            
+            def on_enter_cancelar(e):
+                btn_cancelar.config(bg='#e0e0e0')
+            
+            def on_leave_cancelar(e):
+                btn_cancelar.config(bg='#f5f5f5')
+            
+            btn_cancelar.bind('<Enter>', on_enter_cancelar)
+            btn_cancelar.bind('<Leave>', on_leave_cancelar)
             
         except IndexError:
             messagebox.showwarning("Aviso", "Selecione um cliente para bloquear!")

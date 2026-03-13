@@ -1208,7 +1208,6 @@ class TelaFinanceiro:
     
     def conciliar_lancamentos(self):
         """Simula conciliação de lançamentos selecionados"""
-        # Na implementação real, isso mudaria o status dos selecionados
         messagebox.showinfo("Conciliação", 
                           "Funcionalidade de conciliação em desenvolvimento.\n\n"
                           "Na versão final, você poderá selecionar lançamentos e marcá-los como conciliados.")
