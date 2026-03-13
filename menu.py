@@ -27,7 +27,10 @@ class TelaMenu:
         
         self.cards = {}
         self.criar_interface()
-        self.atualizar_cards()  # Atualização inicial
+        
+        # Atualização inicial após a interface ser criada
+        self.janela.after(500, self.atualizar_cards)
+        
         self.janela.mainloop()
     
     def criar_interface(self):
@@ -53,6 +56,16 @@ class TelaMenu:
             bg='white'
         ).pack(side='right', padx=20)
         
+        # Botão de atualizar manual
+        btn_atualizar_frame, btn_atualizar = Estilos.criar_botao_moderno(
+            header,
+            "Atualizar",
+            self.atualizar_cards,
+            tipo='secundario',
+            icone="🔄"
+        )
+        btn_atualizar_frame.pack(side='right', padx=10)
+        
         # ===== CARDS DE INDICADORES =====
         frame_cards = tk.Frame(self.janela, bg='#f5f5f5')
         frame_cards.pack(fill='x', padx=20, pady=10)
@@ -60,17 +73,12 @@ class TelaMenu:
         for i in range(3):
             frame_cards.columnconfigure(i, weight=1)
         
-        # Buscar dados iniciais
-        vendas_count, vendas_total = self.calcular_vendas_dia()
-        estoque_baixo = self.calcular_estoque_baixo()
-        mais_vendido = self.calcular_mais_vendidos()
-        
         # Card 1 - Vendas do Dia
         self.cards['vendas'] = Estilos.criar_card_moderno(
             frame_cards,
             "Vendas Hoje",
-            vendas_count,
-            f"Total: {vendas_total}",
+            "Carregando...",
+            "Total: R$ 0,00",
             "📊",
             largura=330,
             altura=110
@@ -81,7 +89,7 @@ class TelaMenu:
         self.cards['estoque'] = Estilos.criar_card_moderno(
             frame_cards,
             "Estoque Baixo",
-            estoque_baixo,
+            "Carregando...",
             "produtos críticos",
             "⚠️",
             largura=330,
@@ -93,7 +101,7 @@ class TelaMenu:
         self.cards['top'] = Estilos.criar_card_moderno(
             frame_cards,
             "Mais Vendido",
-            mais_vendido,
+            "Carregando...",
             "item do dia",
             "🔥",
             largura=330,
@@ -205,50 +213,37 @@ class TelaMenu:
         """Atualiza os cards com dados reais"""
         print("🔄 Atualizando cards do menu...")
         
-        vendas_count, vendas_total = self.calcular_vendas_dia()
-        estoque_baixo = self.calcular_estoque_baixo()
-        mais_vendido = self.calcular_mais_vendidos()
-        
-        print(f"📊 Vendas: {vendas_count} - {vendas_total}")
-        print(f"⚠️ Estoque baixo: {estoque_baixo}")
-        print(f"🔥 Mais vendido: {mais_vendido}")
-        
-        # Atualizar card de vendas
-        self.atualizar_card(self.cards['vendas'], vendas_count, f"Total: {vendas_total}")
-        
-        # Atualizar card de estoque
-        self.atualizar_card(self.cards['estoque'], estoque_baixo, "produtos críticos")
-        
-        # Atualizar card de mais vendido
-        self.atualizar_card(self.cards['top'], mais_vendido, "item do dia")
-        
-        print("✅ Cards atualizados!")
-    
-    def atualizar_card(self, card, novo_valor, novo_subtitulo):
-        """Atualiza os valores de um card"""
-        if not card:
-            print("❌ Card não encontrado!")
-            return
-        
         try:
-            # Procura pela estrutura do card moderno
-            # card -> frame_icone (right) e frame_info (left)
-            for widget in card.winfo_children():
-                if isinstance(widget, tk.Frame):
-                    # Verifica se é o frame_info (tem vários labels)
-                    if widget.winfo_children():
-                        for child in widget.winfo_children():
-                            if isinstance(child, tk.Label):
-                                # Label do valor (fonte 20)
-                                if child.cget('font')[1] == 20:
-                                    child.config(text=str(novo_valor))
-                                    print(f"✅ Valor atualizado para: {novo_valor}")
-                                # Label do subtítulo (fonte 9)
-                                elif child.cget('font')[1] == 9:
-                                    child.config(text=novo_subtitulo)
-                                    print(f"✅ Subtítulo atualizado para: {novo_subtitulo}")
+            vendas_count, vendas_total = self.calcular_vendas_dia()
+            estoque_baixo = self.calcular_estoque_baixo()
+            mais_vendido = self.calcular_mais_vendidos()
+            
+            print(f"📊 Vendas: {vendas_count} - {vendas_total}")
+            print(f"⚠️ Estoque baixo: {estoque_baixo}")
+            print(f"🔥 Mais vendido: {mais_vendido}")
+            
+            # Atualizar card de vendas USANDO AS REFERÊNCIAS
+            if 'vendas' in self.cards and hasattr(self.cards['vendas'], 'lbl_valor'):
+                self.cards['vendas'].lbl_valor.config(text=str(vendas_count))
+                self.cards['vendas'].lbl_subtitulo.config(text=f"Total: {vendas_total}")
+                print("✅ Card de vendas atualizado")
+            
+            # Atualizar card de estoque
+            if 'estoque' in self.cards and hasattr(self.cards['estoque'], 'lbl_valor'):
+                self.cards['estoque'].lbl_valor.config(text=str(estoque_baixo))
+                self.cards['estoque'].lbl_subtitulo.config(text="produtos críticos")
+                print("✅ Card de estoque atualizado")
+            
+            # Atualizar card de mais vendido
+            if 'top' in self.cards and hasattr(self.cards['top'], 'lbl_valor'):
+                self.cards['top'].lbl_valor.config(text=str(mais_vendido))
+                self.cards['top'].lbl_subtitulo.config(text="item do dia")
+                print("✅ Card de mais vendido atualizado")
+            
+            print("✅ Cards atualizados com sucesso!")
+            
         except Exception as e:
-            print(f"❌ Erro ao atualizar card: {e}")
+            print(f"❌ Erro ao atualizar cards: {e}")
     
     def calcular_vendas_dia(self):
         """Calcula o total de vendas do dia"""
@@ -299,7 +294,7 @@ class TelaMenu:
             if resultado and resultado[0]:
                 nome = resultado[0]
                 print(f"🔥 Produto mais vendido: {nome}")
-                return nome[:15] + "..." if len(nome) > 15 else nome
+                return nome[:20] + "..." if len(nome) > 20 else nome
             else:
                 print("📭 Nenhuma venda hoje")
                 return "Nenhuma venda"
@@ -312,40 +307,40 @@ class TelaMenu:
         self.janela.withdraw()
         tela = TelaCadastro(self.janela)
         self.janela.wait_window(tela.janela)
-        self.atualizar_cards()
         self.janela.deiconify()
+        self.janela.after(100, self.atualizar_cards)  # Atualizar após voltar
     
     def abrir_consulta(self):
         from consulta_estoque import TelaConsulta
         self.janela.withdraw()
         tela = TelaConsulta(self.janela)
         self.janela.wait_window(tela.janela)
-        self.atualizar_cards()
         self.janela.deiconify()
+        self.janela.after(100, self.atualizar_cards)
     
     def abrir_venda(self):
         from registrar_venda import TelaVenda
         self.janela.withdraw()
         tela = TelaVenda(self.janela)
         self.janela.wait_window(tela.janela)
-        self.atualizar_cards()
         self.janela.deiconify()
+        self.janela.after(100, self.atualizar_cards)  # IMPORTANTE: atualizar após venda
     
     def abrir_clientes(self):
         from clientes import TelaClientes
         self.janela.withdraw()
         tela = TelaClientes(self.janela)
         self.janela.wait_window(tela.janela)
-        self.atualizar_cards()
         self.janela.deiconify()
+        self.janela.after(100, self.atualizar_cards)
     
     def abrir_financeiro(self):
         from financeiro import TelaFinanceiro
         self.janela.withdraw()
         tela = TelaFinanceiro(self.janela)
         self.janela.wait_window(tela.janela)
-        self.atualizar_cards()
         self.janela.deiconify()
+        self.janela.after(100, self.atualizar_cards)
     
     def abrir_relatorios(self):
         from relatorios import TelaRelatorios
@@ -353,6 +348,7 @@ class TelaMenu:
         tela = TelaRelatorios(self.janela)
         self.janela.wait_window(tela.janela)
         self.janela.deiconify()
+        self.janela.after(100, self.atualizar_cards)
     
     def confirmar_sair(self):
         if messagebox.askyesno("Sair", "Deseja realmente sair do sistema?"):

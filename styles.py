@@ -38,44 +38,56 @@ class Estilos:
         card.bind('<Enter>', on_enter)
         card.bind('<Leave>', on_leave)
         
-        # Layout do card (informações à esquerda, ícone à direita como na imagem)
+        # Layout do card (informações à esquerda, ícone à direita)
         frame_info = tk.Frame(card, bg='white', padx=15, pady=10)
         frame_info.pack(side='left', fill='both', expand=True)
         
-        tk.Label(
+        # Título
+        lbl_titulo = tk.Label(
             frame_info,
             text=titulo,
             font=("Arial", 10),
             fg=Estilos.COR_TEXTO_SECUNDARIO,
             bg='white'
-        ).pack(anchor='w')
+        )
+        lbl_titulo.pack(anchor='w')
         
-        tk.Label(
+        # Valor (fonte 20) - GUARDAR REFERÊNCIA
+        lbl_valor = tk.Label(
             frame_info,
-            text=valor,
+            text=str(valor),
             font=("Arial", 20, "bold"),
             fg=Estilos.COR_PRIMARIA,
             bg='white'
-        ).pack(anchor='w')
+        )
+        lbl_valor.pack(anchor='w')
         
-        tk.Label(
+        # Subtítulo (fonte 9) - GUARDAR REFERÊNCIA
+        lbl_subtitulo = tk.Label(
             frame_info,
             text=subtitulo,
             font=("Arial", 9),
             fg='#999999',
             bg='white'
-        ).pack(anchor='w')
+        )
+        lbl_subtitulo.pack(anchor='w')
         
+        # Ícone à direita
         frame_icone = tk.Frame(card, bg='white', width=50)
         frame_icone.pack(side='right', fill='y', padx=(0, 15))
         
-        tk.Label(
+        lbl_icone = tk.Label(
             frame_icone,
             text=icone,
             font=("Arial", 28),
             fg=Estilos.COR_PRIMARIA,
             bg='white'
-        ).pack(expand=True)
+        )
+        lbl_icone.pack(expand=True)
+        
+        # Guardar referências aos labels para facilitar atualização
+        card.lbl_valor = lbl_valor
+        card.lbl_subtitulo = lbl_subtitulo
         
         return card
     

@@ -434,22 +434,22 @@ class TelaClientes:
         )
         self.entries["data_nascimento"].grid(row=3, column=1, sticky='ew', padx=5, pady=5, ipady=5)
         
-        # Sexo
+        # Gênero
         tk.Label(
             frame,
-            text="Sexo:",
+            text="Gênero:",
             font=("Arial", 10, "bold"),
             fg='#333333',
             bg='white'
         ).grid(row=2, column=2, sticky='w', padx=5, pady=(10, 2))
         
-        self.entries["sexo"] = ttk.Combobox(
+        self.entries["gênero"] = ttk.Combobox(
             frame,
             values=["Masculino", "Feminino", "Outro"],
             state='readonly',
             font=("Arial", 10)
         )
-        self.entries["sexo"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=5)
+        self.entries["gênero"].grid(row=3, column=2, sticky='ew', padx=5, pady=5, ipady=5)
         
         # Linha 4: E-mail
         tk.Label(
@@ -851,7 +851,7 @@ class TelaClientes:
                 self.entries["celular"].insert(0, cliente[6] or "")
                 self.entries["email"].insert(0, cliente[7] or "")
                 self.entries["data_nascimento"].insert(0, cliente[8] or "")
-                self.entries["sexo"].set(cliente[9] or "")
+                self.entries["gênero"].set(cliente[9] or "")
                 self.entries["endereco"].insert(0, cliente[10])
                 self.entries["numero"].insert(0, cliente[11] or "")
                 self.entries["complemento"].insert(0, cliente[12] or "")
@@ -906,7 +906,7 @@ class TelaClientes:
             celular = self.entries["celular"].get().strip()
             email = self.entries["email"].get().strip()
             data_nascimento = self.entries["data_nascimento"].get().strip()
-            sexo = self.entries["sexo"].get().strip()
+            genero = self.entries["gênero"].get().strip()
             numero = self.entries["numero"].get().strip()
             complemento = self.entries["complemento"].get().strip()
             cep = self.entries["cep"].get().strip()
@@ -950,11 +950,11 @@ class TelaClientes:
             self.db.cursor.execute('''
                 INSERT INTO clientes (
                     codigo, nome, cpf, rg, telefone, celular, email,
-                    data_nascimento, sexo, endereco, numero, complemento,
+                    data_nascimento, gênero, endereco, numero, complemento,
                     bairro, cidade, estado, cep, data_cadastro, observacoes
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (codigo, nome, cpf_limpo, rg, telefone, celular, email,
-                  data_nascimento, sexo, endereco, numero, complemento,
+                  data_nascimento, genero, endereco, numero, complemento,
                   bairro, cidade, estado, cep, datetime.now().strftime("%d/%m/%Y"),
                   observacoes))
             
@@ -995,7 +995,7 @@ class TelaClientes:
             celular = self.entries["celular"].get().strip()
             email = self.entries["email"].get().strip()
             data_nascimento = self.entries["data_nascimento"].get().strip()
-            sexo = self.entries["sexo"].get().strip()
+            genero = self.entries["gênero"].get().strip()
             numero = self.entries["numero"].get().strip()
             complemento = self.entries["complemento"].get().strip()
             cep = self.entries["cep"].get().strip()
@@ -1026,11 +1026,11 @@ class TelaClientes:
             self.db.cursor.execute('''
                 UPDATE clientes SET
                     nome = ?, cpf = ?, rg = ?, telefone = ?, celular = ?, email = ?,
-                    data_nascimento = ?, sexo = ?, endereco = ?, numero = ?, complemento = ?,
+                    data_nascimento = ?, gênero = ?, endereco = ?, numero = ?, complemento = ?,
                     bairro = ?, cidade = ?, estado = ?, cep = ?, observacoes = ?
                 WHERE codigo = ?
             ''', (nome, cpf_limpo, rg, telefone, celular, email,
-                  data_nascimento, sexo, endereco, numero, complemento,
+                  data_nascimento, genero, endereco, numero, complemento,
                   bairro, cidade, estado, cep, observacoes,
                   self.cliente_atual[1]))
             
@@ -1086,7 +1086,7 @@ class TelaClientes:
 ║ Celular: {cliente[6] or '---'}                              
 ║ E-mail: {cliente[7] or '---'}                               
 ║ Data Nasc.: {cliente[8] or '---'}                           
-║ Sexo: {cliente[9] or '---'}                                 
+║ Gênero: {cliente[9] or '---'}                                 
 ╠════════════════════════════════════════════════════════════╣
 ║                    ENDEREÇO                                 ║
 ╠════════════════════════════════════════════════════════════╣
